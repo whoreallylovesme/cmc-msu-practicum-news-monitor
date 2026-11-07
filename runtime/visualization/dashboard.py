@@ -1,7 +1,7 @@
 """Read-only monitoring dashboard with server-side requests to Web Master."""
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
@@ -181,7 +181,7 @@ def timeline_figure(points, scale):
     figure = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[.72, .28], vertical_spacing=.12)
     figure.add_trace(go.Scatter(
         x=dates, y=[row["score"] for row in points], name="Средний балл", mode="lines+markers",
-        customdata=dates, line=dict(color=ACCENT, width=3), marker=dict(size=8), connectgaps=False,
+        customdata=dates, line=dict(color=ACCENT, width=2.5, shape="linear"), marker=dict(size=5), connectgaps=True,
         hovertemplate="%{x|%d.%m.%Y}<br>Балл %{y:.2f}<extra></extra>",
     ), row=1, col=1)
     figure.add_hline(y=(scale["min"] + scale["max"]) / 2, line_dash="dot", line_color="#b78465", row=1, col=1)
@@ -194,15 +194,15 @@ def timeline_figure(points, scale):
         marker_color=ACCENT, hovertemplate="%{x|%d.%m.%Y}<br>Упоминания %{y}<extra></extra>",
     ), row=2, col=1)
     figure.update_layout(
-        template="plotly_white", height=430, margin=dict(l=50, r=20, t=15, b=35),
+        template="plotly_white", height=430, margin=dict(l=50, r=20, t=15, b=80),
         paper_bgcolor="#fffdfa", plot_bgcolor="#fffdfa", font=dict(family="system-ui", color="#40362e"),
         autosize=True, barmode="group", showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0),
+        legend=dict(orientation="h", yanchor="top", y=-.16, xanchor="center", x=.5, font=dict(size=12)),
         hovermode="x unified", clickmode="event+select", dragmode="zoom",
     )
     figure.update_yaxes(range=[scale["min"], scale["max"]], title_text="Балл", row=1, col=1)
     figure.update_yaxes(title_text="Количество", rangemode="tozero", row=2, col=1)
-    figure.update_xaxes(type="date", gridcolor="#eee5db")
+    figure.update_xaxes(type="date", tickformat="%d.%m.%Y", hoverformat="%d.%m.%Y", nticks=5, gridcolor="#eee5db")
     figure.update_yaxes(gridcolor="#eee5db", zeroline=False)
     return figure
 
@@ -242,7 +242,9 @@ def comments(items, scored=True):
         title = html.Strong(item["story_title"])
         if parsed.scheme in {"https", "http"} and parsed.hostname != "example.invalid":
             title = html.A(item["story_title"], href=item["url"], target="_blank", rel="noopener noreferrer")
-        details = [item["published_at"], item["source"]]
+        published = datetime.fromisoformat(item["published_at"].replace("Z", "+00:00"))
+        source = "Hacker News" if item["source"] == "hacker_news" else item["source"]
+        details = [published.strftime("%d.%m.%Y %H:%M UTC"), source]
         if scored:
             details.append(f'Балл {item["score"]:.2f}' if item["score"] is not None else "Мимо темы")
         children = [title, html.P(" · ".join(details), className="metadata"), html.P(item["text"])]
