@@ -111,13 +111,6 @@ def inference_options(config):
     return mode, tokens, float(temperature)
 
 
-def fixture_distribution(item):
-    label = item.get("fixture_label")
-    if label is None:
-        raise ValueError("Fixture teacher requires the synthetic archive's fixture_label")
-    return [0.02 if index != label else 0.90 for index in range(len(CHOICES))]
-
-
 def input_fingerprint(entity, item):
     return hashlib.sha256(model_input(entity, item).encode("utf-8")).hexdigest()
 
@@ -225,9 +218,7 @@ def ensure_model(config):
             temporary.unlink(missing_ok=True)
 
 
-def cache_namespace(config, teacher, model_digest=None):
-    if teacher == "fixture":
-        return "fixture-v1"
+def cache_namespace(config, model_digest=None):
     revision = config.get("teacher_revision")
     external = external_teacher_url(config)
     if external:
@@ -247,56 +238,6 @@ def cache_namespace(config, teacher, model_digest=None):
     rubric_hash = hashlib.sha256(rubric.encode()).hexdigest()[:12]
     revision_hash = hashlib.sha256(version.encode()).hexdigest()[:16]
     return f"live-{rubric_hash}-{revision_hash}"
-
-
-def load_snapshot(path, entity):
-    raw = path.read_bytes()
-    document = json.loads(raw)
-    if not isinstance(document, dict):
-        raise ValueError("Teacher snapshot must be a JSON object")
-    subject = document.get("entity")
-    if not isinstance(subject, str) or subject.casefold() != entity.casefold():
-        raise ValueError(f"Teacher snapshot is for {subject!r}, not {entity!r}")
-    metadata = document.get("teacher")
-    if not isinstance(metadata, dict) or any(
-        not isinstance(metadata.get(key), str) or not metadata[key].strip()
-        for key in ("model", "revision", "sha256")
-    ) or not re.fullmatch(r"[0-9a-f]{64}", metadata["sha256"].lower()):
-        raise ValueError("Teacher snapshot requires model, revision and SHA-256 provenance")
-
-    labels = {}
-    rows = document.get("items")
-    if not isinstance(rows, list) or not rows:
-        raise ValueError("Teacher snapshot contains no labels")
-    for row in rows:
-        if not isinstance(row, dict):
-            raise ValueError("Invalid teacher snapshot record")
-        comment_id = row.get("comment_id")
-        fingerprint = row.get("input_hash")
-        if (
-            not isinstance(comment_id, str) or not comment_id or comment_id in labels
-            or not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{64}", fingerprint)
-        ):
-            raise ValueError("Teacher snapshot requires unique comment IDs and valid input hashes")
-        labels[comment_id] = {
-            "input_hash": fingerprint,
-            "probabilities": normalized_distribution(row.get("probabilities")).tolist(),
-        }
-    return {
-        "entity": subject,
-        "teacher": metadata,
-        "namespace": "snapshot-" + hashlib.sha256(raw).hexdigest()[:24],
-        "labels": labels,
-    }
-
-
-def validate_snapshot_policy(snapshot, config, entity):
-    saved = snapshot["teacher"].get("mention_policy")
-    current = mention_policy(config, entity)
-    if saved and (saved.get("options") != current["options"]
-                  or [name.casefold() for name in saved.get("aliases", [])]
-                  != [name.casefold() for name in current["aliases"]]):
-        raise ValueError("Saved labels use different mention rules; regenerate the teacher snapshot")
 
 
 def request_json(session, url, payload=None, timeout=60):

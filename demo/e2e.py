@@ -155,7 +155,7 @@ def main(argv=None):
         assert not (
             metrics.get("optimization") or {}
         ).get("encoder_frozen"), "The small demo unexpectedly contains a frozen NN encoder"
-        scored = call(args.url, f"/api/models/{model_id}/score", body={"entity": entity, "limit": expected_items})
+        scored = call(args.url, "/api/score", body={"model_id": model_id, "entity": entity, "limit": expected_items})
         assert (
             scored["processed"] == scored["stored"] == expected_items
         ), f"The model did not score all {expected_items} comments"
@@ -182,19 +182,19 @@ def main(argv=None):
         nonce = uuid4().hex
         novel = {"id": "demo-new-" + nonce, "story_id": "demo-story-" + nonce,
                  "text": f"{entity} explains useful examples, and I check the answers myself. New input {nonce}."}
-        prediction = call(args.url, f"/api/models/{model_id}/predict", body={
-            "entity": entity, "version": model["version"], "items": [novel],
+        prediction = call(args.url, f"/services/ml/models/{model_id}/predict", body={
+            "version": model["version"], "items": [novel],
         })
         assert len(prediction["items"]) == 1, "New-text prediction returned an incorrect number of rows"
         validate_prediction(prediction["items"][0], novel["id"], scale)
-        job = call(args.url, f"/api/models/{model_id}/train", body={
+        job = call(args.url, f"/services/ml/models/{model_id}/train", body={
             "teacher": "dataset", "mode": "incremental", "limit": args.training_limit,
         })
         skipped = wait_job(args.url, job["job_id"], args.timeout)
         assert (
             skipped["status"] == "skipped" and skipped.get("version") == model["version"]
         ), "Unchanged dataset incremental training must skip without creating a version"
-        current = call(args.url, f"/api/models/{model_id}/summary")
+        current = call(args.url, f"/services/ml/models/{model_id}/summary")
         assert (
             current["status"] == "ready" and current["version"] == model["version"]
             and len(current["versions"]) == len(model["versions"])

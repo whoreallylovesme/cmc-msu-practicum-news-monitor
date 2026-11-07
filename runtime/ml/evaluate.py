@@ -80,7 +80,7 @@ def main():
     report = {
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "entity": entity,
-        "timing_note": "Saved snapshot timings may use prepared or in-process NLI features; see README for uncached backbone measurements.",
+        "timing_note": "Student holdout timings come from training metrics and may use cached encoder features; optional live teacher benchmarks are timed separately.",
         "reference": {
             "annotator": reference["annotator"],
             "limitation": reference["limitation"],
@@ -102,12 +102,12 @@ def main():
             "manual_review_in_scope": metrics([item["label"] for item in in_scope], [labels[item["comment_id"]] for item in in_scope], score_statistic),
         }
     seen_kinds = set()
-    for model in call(args.url, "/api/models", query={"entity": entity})["items"]:
+    for model in call(args.url, "/services/ml/models", query={"entity": entity})["items"]:
         if args.model_id and model["id"] != args.model_id:
             continue
         if not model.get("version") or model["kind"] in seen_kinds:
             continue
-        summary = call(args.url, f'/api/models/{model["id"]}/summary')
+        summary = call(args.url, f'/services/ml/models/{model["id"]}/summary')
         predictions = {
             item["comment_id"]: item["probabilities"]
             for item in all_items(args.url, "/api/comments", {"entity": entity, "model_id": model["id"]})
@@ -115,8 +115,8 @@ def main():
         if external:
             rows = list(external.values())
             for offset in range(0, len(rows), 100):
-                result = call(args.url, f'/api/models/{model["id"]}/predict', body={
-                    "entity": entity, "version": model["version"], "items": rows[offset:offset + 100],
+                result = call(args.url, f'/services/ml/models/{model["id"]}/predict', body={
+                    "version": model["version"], "items": rows[offset:offset + 100],
                 })
                 predictions.update({item["comment_id"]: item["probabilities"] for item in result["items"]})
         if not all(item["comment_id"] in predictions for item in primary):

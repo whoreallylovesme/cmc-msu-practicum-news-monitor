@@ -57,7 +57,7 @@ docker compose -p hn-monitor-demo-1k down
 | `runtime/collector` | `/sources`, `/batches`, `/loads`; батчи и журнал загрузок |
 | `runtime/storage` | SQLite и FTS5; CRUD `/comments`, записи `/labels` и `/predictions` |
 | `runtime/ml` | `/models`, `/train`, `/predict`, `/validate`, `/summary`, `/jobs`; обучение и версии |
-| `runtime/web_master` | Единая точка входа `/api/*`, HTTP Basic, роли и сценарии |
+| `runtime/web_master` | `/api/*` для конвейера, `/services/{service}/…` для маршрутизации, HTTP Basic и роли |
 | `runtime/visualization` | Plotly Dash, выбор периода, поиск, отчёт и Swagger |
 | `runtime/teacher` | Необязательный `/label` для новой автоматической разметки |
 
@@ -73,8 +73,14 @@ Web Master объединяет пользовательские сценари�
 `GET /api/comments` — комментарии, а с `model_id` — комментарии с оценками
 и фильтром периода. Отдельных ручек для этих же данных нет.
 У Visualization остаются GUI, Swagger и технический маршрут `/health`.
-Запросы из общего Swagger идут через
-`/services/{service}/…` к владельцу контракта с проверкой прав Web Master.
+Все операции моделей находятся только в ML:
+`/services/ml/models`, `/services/ml/models/{id}/train`, `/summary`, `/predict`,
+`/validate` и `/services/ml/jobs/{id}`. Web Master проверяет права и маршрутизирует
+запросы одним общим прокси; повторных `/api/models` и `/api/jobs` нет.
+`POST /api/score` принимает `model_id`, `entity`, `limit`: читает собранные
+комментарии, применяет выбранную версию ML и сохраняет оценки в Storage.
+Запросы из общего Swagger идут через `/services/{service}/…`
+к владельцу контракта с проверкой прав Web Master.
 
 ## Данные и готовая разметка
 
@@ -157,8 +163,8 @@ path_to_offline_demo_data: demo/hn_1k.json
 Треды обучения и проверки не пересекаются и сохраняют роли между версиями.
 Артефакты и метаданные версий хранятся в SQLite с проверкой SHA-256.
 
-Доступные источники обучения: `dataset`, `reviewed`, `service`, а также
-дополнительные `fixture`, `snapshot`, `live`. Для демо используется `dataset`.
+Доступные источники обучения: `dataset`, `reviewed`, `service`, `live`.
+Для демо используется `dataset`.
 Отдельные проверенные метки находятся в `runtime/ml/reviewed_training_labels.json`.
 
 Для явного NLI-режима выберите `kind: semantic`. Его замороженная DeBERTa Base
@@ -170,10 +176,10 @@ path_to_offline_demo_data: demo/hn_1k.json
 python runtime/ml/prepare.py
 ```
 
-На прежней отдельной ассистентской проверке NLI-вариант получил 62,6% точности
-полярности; цель 70% не подтверждена. Это не оценка лёгкого демо-классификатора.
-Контрольный корпус и метки находятся в `runtime/ml/evaluation_corpus.json`
-и `runtime/ml/evaluation.json`.
+Готовый обученный артефакт NLI в репозиторий не включён: выбранный режим
+обучается через ML API, веса энкодера скачиваются отдельно. Контрольный корпус
+и ассистентские метки находятся в `runtime/ml/evaluation_corpus.json`
+и `runtime/ml/evaluation.json`; независимой человеческой оценки качества нет.
 
 ## Дополнительный учитель
 
@@ -185,8 +191,8 @@ python3 demo/start.py --with-teacher
 без больших весов; они скачиваются при первом запросе разметки по теме
 и сохраняются в отдельном томе. Обычное демо использует готовые метки.
 В едином Swagger есть шесть разделов по названиям сервисов. Для выполнения
-запросов используется HTTP Basic; диагностика внутренних сервисов доступна
-администратору, публичные сценарии сохраняют обычное разделение ролей.
+запросов используется HTTP Basic; читателю доступны GET-запросы моделей и
+пользовательские результаты, запись и диагностика внутренних сервисов доступны администратору.
 Для новой разметки выберите `teacher: service` в API или GUI.
 Контракт, проверка ревизий и кэш описаны в [runtime/teacher/README.md](runtime/teacher/README.md).
 

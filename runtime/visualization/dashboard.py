@@ -24,7 +24,6 @@ TEACHER_LABELS = {
     "dataset": "Готовая разметка датасета",
     "reviewed": "Проверенная разметка",
     "service": "Отдельный сервис учителя",
-    "snapshot": "Метки экспериментального учителя",
     "live": "Модель через llama.cpp",
 }
 
@@ -37,7 +36,7 @@ def create_dashboard(master_url, timeout):
         headers = {"Authorization": request.headers.get("Authorization", "")}
         try:
             result = httpx.request(
-                method, master_url + "/api/" + path, headers=headers,
+                method, master_url + (path if path.startswith("/") else "/api/" + path), headers=headers,
                 json=body, params=params, timeout=timeout,
             )
         except httpx.RequestError as error:
@@ -74,7 +73,8 @@ def create_dashboard(master_url, timeout):
                 headers={"WWW-Authenticate": result.headers.get("www-authenticate", 'Basic realm="News Monitor"')},
                 content_type=result.headers.get("content-type", "application/json"),
             )
-        g.monitor_role = result.json()["role"]
+        g.monitor_config = result.json()
+        g.monitor_role = g.monitor_config["role"]
 
     def control(title, component):
         return html.Label([html.Span(title), component], className="control")
@@ -82,13 +82,9 @@ def create_dashboard(master_url, timeout):
     def layout():
         config = {"entities": [], "sources": [], "monitoring": {}}
         role = "viewer"
-        error = ""
         if has_request_context():
             role = getattr(g, "monitor_role", "viewer")
-            try:
-                config = master("config")
-            except RuntimeError as failure:
-                error = str(failure)
+            config = getattr(g, "monitor_config", config)
         source = config["monitoring"].get("source")
         entity = config["monitoring"].get("query")
         return html.Main([
@@ -123,7 +119,7 @@ def create_dashboard(master_url, timeout):
                 )),
                 html.A("Скачать отчёт", id="report", className="button secondary", style={"display": "none"}),
             ], className="filters"),
-            html.P(error, id="notice", role="status", className="notice" if error else "notice empty"),
+            html.P("", id="notice", role="status", className="notice empty"),
             html.Section([
                 html.H2("Управление"),
                 html.Div([
@@ -146,7 +142,6 @@ def create_dashboard(master_url, timeout):
                         {"label": TEACHER_LABELS["dataset"], "value": "dataset"},
                         {"label": TEACHER_LABELS["reviewed"], "value": "reviewed"},
                         {"label": TEACHER_LABELS["service"], "value": "service"},
-                        {"label": TEACHER_LABELS["snapshot"], "value": "snapshot"},
                     ] + ([] if config.get("offline_demo") else [{"label": "Модель через llama.cpp", "value": "live"}]),
                         value=TEACHERS.get(source, "dataset"), clearable=False)),
                     control("Режим", dcc.Dropdown(id="mode", options=[
@@ -211,7 +206,7 @@ def create_dashboard(master_url, timeout):
         if not entity:
             return [], None
         try:
-            rows = master("models", params={"entity": entity})["items"]
+            rows = master("/services/ml/models", params={"entity": entity})["items"]
         except RuntimeError:
             return [], None
         options = [{"label": f'{row["kind"]} · {row["id"][:8]}' + (f' · v{row["version"]}' if row.get("version") else ""),
@@ -252,13 +247,13 @@ def create_dashboard(master_url, timeout):
                 return [f'Получено {result["received"]}, сохранено {result["stored"]}.', "notice",
                         result.get("next_cursor"), (refresh or 0) + 1, no_update, no_update, no_update, no_update]
             if trigger == "create":
-                model = master("models", method="POST", body={"entity": entity, "kind": kind})
+                model = master("/services/ml/models", method="POST", body={"entity": entity, "kind": kind})
                 return ["Модель создана. Можно запустить обучение.", "notice", no_update,
                         (refresh or 0) + 1, model["id"], no_update, no_update, no_update]
             if trigger == "job-poll":
                 if not job:
                     return unchanged
-                result = master("jobs/" + job["job_id"])
+                result = master("/services/ml/jobs/" + job["job_id"])
                 progress = f' · {result.get("labeled", 0)}/{result["total"]}' if result.get("total") else ""
                 label = f'Обучение · {result.get("stage", result["status"])}{progress}'
                 if result["status"] in {"queued", "running"}:
@@ -275,13 +270,13 @@ def create_dashboard(master_url, timeout):
             if not model_id:
                 raise RuntimeError("Сначала создай модель.")
             if trigger == "train":
-                started = master(f"models/{model_id}/train", method="POST", body={
+                started = master(f"/services/ml/models/{model_id}/train", method="POST", body={
                     "teacher": teacher, "mode": mode, "limit": 10000 if teacher == "dataset" else 3000,
                 })
                 return ["Обучение запущено.", "notice", no_update, no_update,
                         no_update, started, False, "Подготовка данных…"]
             if trigger == "score":
-                result = master(f"models/{model_id}/score", method="POST", body={"entity": entity, "limit": 10000})
+                result = master("score", method="POST", body={"model_id": model_id, "entity": entity, "limit": 10000})
                 return [f'Версия {result["version"]} оценила {result["processed"]} комментариев.', "notice",
                         no_update, (refresh or 0) + 1, no_update, no_update, no_update, no_update]
         except RuntimeError as error:
@@ -304,7 +299,7 @@ def create_dashboard(master_url, timeout):
         if not entity:
             return empty_figure(), [], "Выбери сущность для мониторинга.", [], "", {"display": "none"}, None, {}, []
         try:
-            model = master(f"models/{model_id}/summary") if model_id else None
+            model = master(f"/services/ml/models/{model_id}/summary") if model_id else None
             active = model is not None and model.get("version") is not None
             params = {"entity": entity, "bucket": bucket}
             if active:
@@ -451,7 +446,7 @@ def comments(items, scored=True):
         title = html.Strong(item["story_title"])
         if parsed.scheme in {"https", "http"} and parsed.hostname != "example.invalid":
             title = html.A(item["story_title"], href=item["url"], target="_blank", rel="noopener noreferrer")
-        details = [item["published_at"], "Синтетический набор" if item.get("fixture_label") is not None else item["source"]]
+        details = [item["published_at"], item["source"]]
         if scored:
             details.append(f'Балл {item["score"]:.2f}' if item["score"] is not None else "Мимо темы")
         children = [title, html.P(" · ".join(details), className="metadata"), html.P(item["text"])]
@@ -501,8 +496,6 @@ def model_metrics(model):
         result.append(html.P("Обучение на проверенной ассистентом разметке. Новые комментарии участвуют в обучении после разметки.", className="subtle"))
     if holdout.get("quality_status") == "unavailable":
         result.append(html.P("Для этой версии нет размеченных проверочных комментариев. Качество после дообучения ещё не измерено.", className="subtle"))
-    if model.get("teacher") == "snapshot":
-        result.append(html.P("Метрики показывают согласие с сохранёнными оценками учителя.", className="subtle"))
     result.append(html.Details([html.Summary("Все метрики"), html.Pre(json.dumps(metrics, ensure_ascii=False, indent=2))]))
     history = [html.P(f'v{row["version"]} · {row.get("mode", "from_scratch")} · {row["trained_at"]}', className="metadata")
                for row in model.get("versions", [])]

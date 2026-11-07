@@ -9,15 +9,14 @@ from typing import Literal, Optional
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from lib.config import load_config, load_project_config
-from lib.teacher_contracts import TeacherComment
-from lib.contracts import ProviderName
+from lib.contracts import Identifier, ProviderName
 from lib.sentiment import SCORE_MAX as MODEL_SCORE_MAX, SCORE_MIN as MODEL_SCORE_MIN
 
 
@@ -150,32 +149,16 @@ def display_metrics(value):
 
 
 class ImportRequest(BaseModel):
-    entity: str = Field(min_length=1, max_length=120)
+    entity: Identifier
     source: ProviderName = "hn_snapshot"
     cursor: Optional[str] = None
     limit: int = Field(default=100, ge=1, le=100)
 
 
-class ModelRequest(BaseModel):
-    entity: str = Field(min_length=1, max_length=120)
-    kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = "hard_label"
-
-
-class TrainRequest(BaseModel):
-    teacher: Literal["dataset", "reviewed", "service", "snapshot", "fixture", "live"] = "dataset"
-    mode: Literal["from_scratch", "incremental"] = "from_scratch"
-    limit: int = Field(default=3000, ge=12, le=10000)
-
-
 class ScoreRequest(BaseModel):
-    entity: str = Field(min_length=1, max_length=120)
+    model_id: Identifier
+    entity: Identifier
     limit: int = Field(default=500, ge=1, le=10000)
-
-
-class PredictionRequest(BaseModel):
-    entity: str = Field(min_length=1, max_length=120)
-    items: list[TeacherComment] = Field(min_length=1, max_length=100)
-    version: Optional[int] = Field(default=None, ge=1)
 
 
 class ImportResult(BaseModel):
@@ -183,10 +166,6 @@ class ImportResult(BaseModel):
     received: int
     stored: int
     next_cursor: Optional[str]
-
-
-class JobStarted(BaseModel):
-    job_id: str
 
 
 class ScoreResult(BaseModel):
@@ -221,26 +200,35 @@ def service_schema(service: str):
 
 
 @app.api_route("/services/{service}/{path:path}",
-               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE"],
+               methods=["GET", "POST", "PUT", "DELETE"],
                include_in_schema=False)
 async def service_request(service: str, path: str, request: Request, current_role: str = Depends(role)):
     if service not in SCHEMA_SERVICES:
         raise HTTPException(404, "Unknown service")
-    if service != "web_master" and current_role != "admin":
+    if any(part in {".", ".."} for part in path.split("/")):
+        raise HTTPException(404, "Unknown service operation")
+    read_model = service == "ml" and request.method == "GET"
+    if service != "web_master" and not read_model and current_role != "admin":
         raise HTTPException(403, "Administrator access is required for internal service requests")
     if service == "web_master":
-        base_url = os.environ.get("MASTER_URL", str(request.base_url)).rstrip("/")
+        if not (path.startswith("api/") or path == "health"):
+            raise HTTPException(404, "Unknown Web Master operation")
+        base_url = "http://web-master"
     else:
         base_url = TEACHER_URL if service == "teacher" else UPSTREAMS[service]
     headers = {name: request.headers[name] for name in ("authorization", "content-type", "accept")
                if name in request.headers}
     body = await request.body()
     try:
-        response = await run_in_threadpool(
-            httpx.request, request.method, base_url + "/" + path,
-            params=list(request.query_params.multi_items()), headers=headers, content=body,
-            timeout=CONFIG["timeouts"].get(service, CONFIG["timeouts"]["default"]),
-        )
+        options = {"params": list(request.query_params.multi_items()), "headers": headers, "content": body}
+        if service == "web_master":
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=base_url) as client:
+                response = await client.request(request.method, "/" + path, **options)
+        else:
+            response = await run_in_threadpool(
+                httpx.request, request.method, base_url + "/" + path, **options,
+                timeout=CONFIG["timeouts"].get(service, CONFIG["timeouts"]["default"]),
+            )
     except httpx.TimeoutException as error:
         LOGGER.exception("Service request timed out for %s", service)
         raise HTTPException(504, f"{service} timed out") from error
@@ -250,6 +238,12 @@ async def service_request(service: str, path: str, request: Request, current_rol
     outgoing = {name: response.headers[name]
                 for name in ("content-type", "content-disposition", "www-authenticate")
                 if name in response.headers}
+    model_response = path == "models" or path.startswith(("models/", "jobs/"))
+    if service == "ml" and model_response and not response.is_error:
+        payload = display_metrics(response.json())
+        if path.endswith("/predict"):
+            payload = display_scores(payload)
+        return JSONResponse({**payload, "score_scale": SCORE_SCALE}, status_code=response.status_code)
     return Response(content=response.content, status_code=response.status_code, headers=outgoing)
 
 
@@ -312,7 +306,7 @@ def import_batch(request: ImportRequest):
 
 @app.get("/api/comments", dependencies=[Depends(role)], tags=["Collection"])
 def comments(
-    entity: str,
+    entity: Identifier,
     model_id: Optional[str] = None,
     query: Optional[str] = None,
     from_date: Optional[str] = None,
@@ -324,73 +318,28 @@ def comments(
 
     Without model_id, query searches the raw archive using SQLite FTS5.
     """
-    entity_settings(entity)
     if model_id:
         model = versioned_model(model_id, entity)
         return display_scores(upstream(
             "storage", "GET", "/predictions",
             params={
                 "entity": entity, "model_id": prediction_key(model),
-                "from_date": from_date, "to_date": to_date, "limit": limit, "offset": offset,
+                "query": query, "from_date": from_date, "to_date": to_date, "limit": limit, "offset": offset,
             },
         ))
     return upstream(
         "storage", "GET", "/comments",
-        params={"entity": entity, "query": query, "limit": limit, "offset": offset},
+        params={"entity": entity, "query": query, "from_date": from_date, "to_date": to_date,
+                "limit": limit, "offset": offset},
     )
 
 
-@app.get("/api/models", dependencies=[Depends(role)], tags=["Models"])
-def models(entity: str):
-    entity_settings(entity)
-    return display_metrics(upstream("ml", "GET", "/models", params={"entity": entity}))
-
-
-@app.post("/api/models", status_code=201, dependencies=[Depends(admin)], tags=["Models"])
-def create_model(request: ModelRequest):
-    entity_settings(request.entity)
-    return upstream("ml", "POST", "/models", data=request.model_dump())
-
-
-@app.get("/api/models/{model_id}/summary", dependencies=[Depends(role)], tags=["Models"])
-def model_summary(model_id: str):
-    return {**display_metrics(upstream("ml", "GET", f"/models/{model_id}/summary")), "score_scale": SCORE_SCALE}
-
-
 @app.post(
-    "/api/models/{model_id}/train",
-    status_code=202,
-    dependencies=[Depends(admin)],
-    response_model=JobStarted,
-    tags=["Models"],
+    "/api/score", dependencies=[Depends(admin)], response_model=ScoreResult, tags=["Results"]
 )
-def train(model_id: str, request: TrainRequest):
-    """Start training. Poll /api/jobs/{job_id} for its current stage and outcome."""
-    if PROJECT["offline_demo"] and request.teacher == "live":
-        raise HTTPException(409, "Offline demo uses saved labels. Select dataset, reviewed, snapshot or fixture.")
-    return upstream("ml", "POST", f"/models/{model_id}/train", data=request.model_dump())
-
-
-@app.get("/api/jobs/{job_id}", dependencies=[Depends(role)], tags=["Models"])
-def job(job_id: str):
-    return display_metrics(upstream("ml", "GET", f"/jobs/{job_id}"))
-
-
-@app.post("/api/models/{model_id}/predict", dependencies=[Depends(admin)], tags=["Models"])
-def predict_items(model_id: str, request: PredictionRequest):
-    """Apply a pinned model to new comments without importing them into Storage."""
-    model = versioned_model(model_id, request.entity)
-    result = upstream("ml", "POST", f"/models/{model_id}/predict", data={
-        "items": [item.model_dump() for item in request.items],
-        "version": request.version or model["version"],
-    })
-    return {**display_scores(result), "score_scale": SCORE_SCALE}
-
-
-@app.post(
-    "/api/models/{model_id}/score", dependencies=[Depends(admin)], response_model=ScoreResult, tags=["Models"]
-)
-def score(model_id: str, request: ScoreRequest):
+def score(request: ScoreRequest):
+    """Score stored comments with a pinned model version and save the results."""
+    model_id = request.model_id
     entity_settings(request.entity)
     model = versioned_model(model_id, request.entity)
     processed = 0
@@ -427,11 +376,8 @@ def score(model_id: str, request: ScoreRequest):
     return {"processed": processed, "stored": stored, "version": model["version"]}
 
 
-@app.get("/api/analytics", dependencies=[Depends(role)], tags=["Results"])
-def analytics(entity: str, model_id: Optional[str] = None, bucket: Bucket = "week"):
-    """Count mentions in collected comments and report their scored sentiment and sources."""
+def model_analytics(entity, model, bucket):
     settings = entity_settings(entity)
-    model = versioned_model(model_id, entity) if model_id else None
     policy = model.get("mention_policy") if model else None
     aliases = policy["aliases"] if policy else settings["aliases"]
     matching = policy["options"] if policy else settings["matching"]
@@ -461,10 +407,17 @@ def analytics(entity: str, model_id: Optional[str] = None, bucket: Bucket = "wee
     }
 
 
+@app.get("/api/analytics", dependencies=[Depends(role)], tags=["Results"])
+def analytics(entity: Identifier, model_id: Optional[str] = None, bucket: Bucket = "week"):
+    """Count mentions in collected comments and report their scored sentiment and sources."""
+    model = versioned_model(model_id, entity) if model_id else None
+    return model_analytics(entity, model, bucket)
+
+
 @app.get("/api/report", dependencies=[Depends(role)], response_class=HTMLResponse, tags=["Results"])
-def report(entity: str, model_id: str, bucket: Bucket = "week"):
+def report(entity: Identifier, model_id: str, bucket: Bucket = "week"):
     model = versioned_model(model_id, entity)
-    data = analytics(entity, model_id, bucket)
+    data = model_analytics(entity, model, bucket)
     page = TEMPLATES.get_template("report.html").render(
         entity=entity,
         model=model,

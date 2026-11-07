@@ -14,7 +14,6 @@ class NewsComment:
     url: str
     parent_id: Optional[str] = None
     parent_text: Optional[str] = None
-    fixture_label: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -57,7 +56,6 @@ def comments_as_dto(news_items: Iterable[News]) -> list[dict]:
             "parent_text": comment.parent_text,
             "url": comment.url,
             "source": story.source,
-            "fixture_label": comment.fixture_label,
         }
         for story in news_items
         for comment in story.comments

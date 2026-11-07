@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
-from .sentiment import CHOICES, OFF_TOPIC, SCORE_MAX, SCORE_MIN
+from .sentiment import CHOICES, SCORE_MAX, SCORE_MIN
 
 
 Identifier = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -50,7 +50,6 @@ class Comment(BaseModel):
     parent_text: Optional[str] = Field(default=None, max_length=65536)
     url: str = Field(min_length=1, max_length=4096)
     source: Identifier
-    fixture_label: Optional[int] = Field(default=None, ge=0, le=OFF_TOPIC)
 
     @field_validator("published_at")
     @classmethod

@@ -63,7 +63,10 @@ def _identity(bundle):
 
 def _cache_dir(bundle, selected=None):
     path = selected or os.environ.get("ML_ENCODER_CACHE_DIR") or _CACHE_OVERRIDES.get(_identity(bundle))
-    return Path(path).expanduser() if path else BASE / "pretrained" / "cache"
+    if path:
+        return Path(path).expanduser()
+    data = Path(os.environ.get("MONITOR_DATA_DIR", BASE.parents[1] / ".local-data/ml"))
+    return data / "encoder-weights"
 
 
 def _source(options, name):
@@ -116,8 +119,8 @@ def prepare(config):
     feature_cache = options.get("feature_cache")
     if feature_cache:
         feature_cache = str(feature_cache)
-        if Path(feature_cache).is_absolute() or ".." in Path(feature_cache).parts:
-            raise ValueError("NLI prepared feature cache must be relative to runtime/ml")
+        if not Path(feature_cache).is_absolute() and ".." in Path(feature_cache).parts:
+            raise ValueError("Use an absolute path for an NLI feature cache outside runtime/ml")
     bundle = {
         "output_mode": "nli", "descriptor_version": 1,
         "model_source": model, "tokenizer_source": tokenizer,

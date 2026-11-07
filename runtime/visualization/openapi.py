@@ -8,8 +8,8 @@ METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
 DESCRIPTIONS = {
     "collector": "Источники, получение батча и журнал загрузок.",
     "storage": "CRUD комментариев, сохранение оценок и разметки, агрегация данных.",
-    "ml": "Создание, обучение, проверка и применение модели; состояние задач.",
-    "web_master": "Пользовательские сценарии: загрузка → обучение → оценка → аналитика и отчёт. Здесь действует настроенная шкала баллов.",
+    "ml": "Все операции моделей: создание, обучение, проверка, предсказания и состояние задач. Читателю доступны GET-запросы.",
+    "web_master": "Сценарии конвейера: импорт → пакетная оценка → аналитика и отчёт. Методов управления моделями здесь нет.",
     "visualization": "Интерактивный дашборд доступен по адресу /. REST-маршрут проверяет его доступность.",
     "teacher": "Метаданные учителя и разметка примеров. Опциональный сервис для обучения.",
 }
@@ -37,8 +37,9 @@ def merge_schemas(schemas, unavailable=()):
     result = {
         "openapi": "3.1.0",
         "info": {"title": "HN Monitor — all services", "version": "1.0.0",
-                 "description": "HTTP contracts of all six microservices. Sign in with HTTP Basic. "
-                 "Internal service requests require an administrator account."},
+                 "description": "Контракты сгруппированы по сервисам. Войдите через HTTP Basic. "
+                 "Управление моделями находится только в ML; читатель может читать модели и результаты, "
+                 "операции записи доступны администратору. Баллы через gateway используют настроенную шкалу."},
         "tags": [{"name": title, "description": DESCRIPTIONS[service]} for service, title in SERVICES],
         "paths": {},
         "components": {"securitySchemes": {"HTTPBasic": {"type": "http", "scheme": "basic"}}},

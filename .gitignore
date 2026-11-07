@@ -5,5 +5,4 @@ __pycache__/
 .env
 .local-data/
 models/*.gguf
-runtime/ml/pretrained/cache/
 .impeccable/

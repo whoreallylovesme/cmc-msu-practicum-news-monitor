@@ -36,10 +36,10 @@ explicitly after starting Teacher:
 docker compose --profile training exec teacher python prepare.py
 ```
 
-To use Teacher, create a model with `POST /api/models` in the main Swagger,
-then call `POST /api/models/{id}/train` with
+To use Teacher, create a model with `POST /services/ml/models` in the main Swagger,
+then call `POST /services/ml/models/{id}/train` with
 `{"teacher": "service", "mode": "from_scratch", "limit": 100}`.
-Poll `GET /api/jobs/{id}` for the result. The chosen entity must have imported
+Poll `GET /services/ml/jobs/{id}` for the result. The chosen entity must have imported
 comments from at least two threads.
 
 For a native run, select a writable cache and add the optional process:

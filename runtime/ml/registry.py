@@ -6,7 +6,6 @@ import json
 import sqlite3
 from contextlib import closing
 from functools import lru_cache
-from pathlib import Path
 
 import joblib
 
@@ -62,24 +61,6 @@ class Registry:
         if hashlib.sha256(payload).hexdigest() != checksum:
             raise ValueError("Model artifact checksum mismatch")
         return joblib.load(io.BytesIO(payload))
-
-    def install_bundled(self, manifest_path):
-        """Install a trusted, checksummed local model once; preserve user revisions."""
-        path = Path(manifest_path)
-        if not path.is_file():
-            return
-        document = json.loads(path.read_text(encoding="utf-8"))
-        model = document["model"]
-        state = self.state()
-        if model["id"] in state["models"]:
-            return
-        payload = (path.parent / document["artifact"]).read_bytes()
-        record = next(item for item in model["versions"] if item["version"] == model["version"])
-        checksum = hashlib.sha256(payload).hexdigest()
-        if checksum != record["artifact_sha256"] or len(payload) != record["artifact_bytes"]:
-            raise ValueError("Bundled model checksum or size mismatch")
-        state["models"][model["id"]] = model
-        self.save(state, (model["id"], model["version"], checksum, payload))
 
 
 def serialize(artifact):

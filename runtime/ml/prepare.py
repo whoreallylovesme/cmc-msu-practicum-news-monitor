@@ -1,4 +1,4 @@
-"""Download the pinned inference assets once, before running the offline demo."""
+"""Prefetch the optional semantic encoder's pinned inference assets."""
 
 import argparse
 import json
@@ -35,7 +35,8 @@ def main():
             items = [item for story in json.loads(dataset.read_text(encoding="utf-8")) for item in story["comments"]]
             matcher = MentionMatcher(monitoring["query"], monitoring["aliases"], monitoring["matching"])
             items = [item for item in items if matcher.match(item) is not None]
-            destination = ROOT / "runtime/ml" / config["student_encoder"]["feature_cache"]
+            selected = config["student_encoder"].get("feature_cache")
+            destination = ROOT / "runtime/ml" / selected if selected else args.cache_dir.resolve() / "nli_features.json"
             nli_encoder.generate_feature_cache(config, items, destination, monitoring["query"])
             print(f"Prepared features: {destination}")
     else:

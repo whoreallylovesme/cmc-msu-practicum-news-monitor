@@ -91,7 +91,6 @@ def archive_news(story):
         NewsComment(
             id=item["id"], date=read_date(item["published_at"]), text=item["text"], url=item["url"],
             parent_id=item.get("parent_id"), parent_text=item.get("parent_text"),
-            fixture_label=item.get("fixture_label"),
         )
         for item in raw_comments
     )
@@ -147,6 +146,10 @@ class HackerNewsSource(NewsProvider):
         self.page_size = config["stories_per_page"]
         self.request_budget = config["requests_per_batch"]
         self.max_response_bytes = config["max_response_bytes"]
+        if self.request_budget < 2:
+            raise ValueError("live.requests_per_batch must allow a search and a thread request (at least 2)")
+        if self.page_size < 1:
+            raise ValueError("live.stories_per_page must be positive")
         self.lock = Lock()
         self.next_request_at = 0.0
 

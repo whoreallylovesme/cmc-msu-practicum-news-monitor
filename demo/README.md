@@ -33,9 +33,11 @@ HTML-отчёт, предсказание нового текста и проп�
 
 UI — [localhost:8080](http://127.0.0.1:8080/), Swagger —
 [gateway-docs](http://127.0.0.1:8080/gateway-docs).
-Порты задаются экспортированными `MONITOR_API_PORT`, `MONITOR_UI_PORT` и
-`MONITOR_TEACHER_PORT`; учётные данные — существующими `MONITOR_ADMIN_*`
-и `MONITOR_VIEWER_*`. CLI и Compose должны получать одно окружение.
+Порты задаются `MONITOR_API_PORT`, `MONITOR_UI_PORT` и `MONITOR_TEACHER_PORT`;
+учётные данные — `MONITOR_ADMIN_*` и `MONITOR_VIEWER_*` в окружении или `.env`.
+Launcher читает разрешённую конфигурацию Compose и передаёт те же порт и учётные
+данные в свой E2E. Для отдельного запуска `demo/e2e.py` экспортируйте учётные данные
+и передайте фактический API-порт через `--url`.
 
 Повторить E2E на уже запущенных сервисах и сравнить два малых классификатора:
 

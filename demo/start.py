@@ -1,6 +1,7 @@
 """Start the Docker demo, run public-API E2E checks and leave its UI running."""
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -11,30 +12,27 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_PREFIX = "hn-monitor-demo"
 
 
-def port_from_env(parser, name, default):
-    try:
-        port = int(os.environ.get(name, str(default)))
-    except ValueError:
-        parser.error(f"{name} must be an integer port")
-    if not 1 <= port <= 65535:
-        parser.error(f"{name} must be between 1 and 65535")
-    return port
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", choices=["1k", "10k"], default="1k", help="Prelabelled snapshot size")
     parser.add_argument("--with-teacher", action="store_true", help="Also start the optional training profile")
     args = parser.parse_args()
-    api_port = port_from_env(parser, "MONITOR_API_PORT", 8081)
-    ui_port = port_from_env(parser, "MONITOR_UI_PORT", 8080)
-    teacher_port = port_from_env(parser, "MONITOR_TEACHER_PORT", 8082) if args.with_teacher else None
     project = f"{PROJECT_PREFIX}-{args.dataset}"
     environment = {**os.environ, "MONITOR_DATASET_PATH": f"demo/hn_{args.dataset}.json"}
     compose = ["docker", "compose", "-p", project]
     if args.with_teacher:
         compose.extend(["--profile", "training"])
     try:
+        resolved = subprocess.run(
+            [*compose, "config", "--format", "json"], cwd=ROOT, env=environment,
+            check=True, capture_output=True, text=True,
+        )
+        services = json.loads(resolved.stdout)["services"]
+        api_port = int(services["web_master"]["ports"][0]["published"])
+        ui_port = int(services["visualization"]["ports"][0]["published"])
+        teacher_port = int(services["teacher"]["ports"][0]["published"]) if args.with_teacher else None
+        for name in ("MONITOR_ADMIN_USER", "MONITOR_ADMIN_PASSWORD", "MONITOR_VIEWER_USER", "MONITOR_VIEWER_PASSWORD"):
+            environment[name] = services["web_master"]["environment"][name]
         subprocess.run([*compose, "up", "--build", "--wait"], cwd=ROOT, env=environment, check=True)
         print(f"UI: http://127.0.0.1:{ui_port}/", flush=True)
         print(f"Swagger API: http://127.0.0.1:{ui_port}/gateway-docs", flush=True)
@@ -50,6 +48,8 @@ def main():
         print(f"Could not start the demo command: {error}", file=sys.stderr)
         return 127
     except subprocess.CalledProcessError as error:
+        if error.stderr:
+            print(error.stderr, file=sys.stderr)
         print(f"Demo command failed with status {error.returncode}. Containers were left available for inspection.", file=sys.stderr)
         return error.returncode or 1
     except KeyboardInterrupt:

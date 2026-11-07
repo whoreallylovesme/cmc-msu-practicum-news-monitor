@@ -21,9 +21,6 @@ teacher_prompt_path: prompts/entity_sentiment.yaml
 teacher_temperature: 0.2
 teacher_max_tokens: 220
 teacher_label_smoothing: 0.05
-snapshot_path: hn_snapshot_labels.json
-# Optional prebuilt model: pretrained/manifest.json
-bootstrap_model_path: ''
 llama_binary: llama-server
 llama_bind_host: 127.0.0.1
 llama_port: 0
@@ -67,7 +64,7 @@ student_encoder:
   entailment_index: 0
   max_length: 512
   threads: 2
-  feature_cache: pretrained/nli_features.json
+  feature_cache: null
   download_timeout: 180
   max_model_bytes: 1073741824
 semantic_head: joint

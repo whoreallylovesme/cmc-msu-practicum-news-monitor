@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent
 CONFIG = load_config(ROOT / "config.yaml", env_var="VISUALIZATION_CONFIG")
 LOGGER = logging.getLogger(__name__)
 MASTER = os.environ.get("MASTER_URL", CONFIG["master_url"]).rstrip("/")
-SCHEMA_SERVICES = ("web_master", "collector", "storage", "ml", "visualization", "teacher")
+SCHEMA_SERVICES = tuple(service for service, _ in SERVICES)
 
 app = FastAPI(title="News Monitor Visualization")
 
@@ -91,7 +91,7 @@ def gateway_schema(request: Request):
 
 
 @app.api_route("/services/{service}/{path:path}",
-               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE"],
+               methods=["GET", "POST", "PUT", "DELETE"],
                include_in_schema=False)
 async def service_request(service: str, path: str, request: Request):
     if service not in SCHEMA_SERVICES:

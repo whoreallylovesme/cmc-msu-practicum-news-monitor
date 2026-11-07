@@ -30,13 +30,10 @@ from teacher_client import TeacherService
 from teacher import (
     cache_namespace,
     ensure_model,
-    fixture_distribution,
     input_fingerprint,
-    load_snapshot,
     llama_teacher,
     model_path,
     weights_source,
-    validate_snapshot_policy,
 )
 
 
@@ -52,7 +49,6 @@ CONFIG = load_config(
         "teacher_service_url": "TEACHER_SERVICE_URL",
         "teacher_revision": "ML_TEACHER_REVISION",
         "llama_binary": "ML_LLAMA_BINARY",
-        "snapshot_path": "ML_SNAPSHOT_PATH",
     },
 )
 if os.environ.get("ML_MODEL_LOCAL_PATH"):
@@ -63,8 +59,6 @@ CONFIG["monitoring"] = load_monitoring()
 DATA = Path(os.environ.get("MONITOR_DATA_DIR", CONFIG["data_dir"]))
 DATA.mkdir(parents=True, exist_ok=True)
 REGISTRY = Registry(DATA / "model-registry.sqlite3")
-if CONFIG.get("bootstrap_model_path"):
-    REGISTRY.install_bundled(BASE / CONFIG["bootstrap_model_path"])
 LOCK = threading.RLock()
 WORKER = ThreadPoolExecutor(max_workers=1, thread_name_prefix="training")
 STATE = REGISTRY.state()
@@ -96,7 +90,6 @@ class Comment(BaseModel):
     parent_id: Optional[str] = None
     content_hash: Optional[str] = None
     human_label: Optional[int] = Field(default=None, ge=0, le=5)
-    fixture_label: Optional[int] = Field(default=None, ge=0, le=5)
 
 
 class CreateModel(BaseModel):
@@ -105,7 +98,7 @@ class CreateModel(BaseModel):
 
 
 class TrainModel(BaseModel):
-    teacher: Literal["dataset", "reviewed", "service", "live", "fixture", "snapshot"] = "dataset"
+    teacher: Literal["dataset", "reviewed", "service", "live"] = "dataset"
     mode: Literal["from_scratch", "incremental"] = "from_scratch"
     limit: int = Field(default=3000, ge=4, le=10000)
 
@@ -216,14 +209,13 @@ def labels_from_service(session, job_id, entity, items, service):
     }
 
 
-def labels_for(session, job_id, teacher, entity, items, snapshot, service=None):
+def labels_for(session, job_id, teacher, entity, items, snapshot, service=None, model_digest=None):
     if teacher == "service":
         return labels_from_service(session, job_id, entity, items, service)
-    model_digest = None
     if teacher == "live":
         job_progress(job_id, stage="preparing_teacher")
-        model_digest = ensure_model(CONFIG)
-    namespace = snapshot["namespace"] if snapshot else cache_namespace(CONFIG, teacher, model_digest)
+        model_digest = model_digest or ensure_model(CONFIG)
+    namespace = snapshot["namespace"] if snapshot else cache_namespace(CONFIG, model_digest)
     subject = snapshot["entity"] if snapshot else entity
     inputs = {item["id"]: input_fingerprint(subject, item) for item in items}
     stored = {
@@ -241,11 +233,9 @@ def labels_for(session, job_id, teacher, entity, items, snapshot, service=None):
             start = time.perf_counter()
             if snapshot:
                 target = snapshot["labels"][item["id"]]["probabilities"]
-            elif frozen is not None:
+            else:
                 target = frozen.distribution(entity, item)
                 inference_seconds += time.perf_counter() - start
-            else:
-                target = fixture_distribution(item)
             stored[item["id"]] = target
             record = {
                 "comment_id": item["id"],
@@ -274,8 +264,6 @@ def labels_for(session, job_id, teacher, entity, items, snapshot, service=None):
             timing.update(labels_from_dataset=len(items), dataset_source=snapshot["teacher"])
         elif snapshot.get("kind") == "reviewed":
             timing.update(labels_from_reviewed=len(items), reviewed_source=snapshot["teacher"])
-        else:
-            timing.update(labels_from_snapshot=len(items), snapshot_teacher=snapshot["teacher"])
     return [stored[item["id"]] for item in items], namespace, timing
 
 
@@ -290,41 +278,37 @@ def teacher_snapshot(teacher, entity):
         if not path.is_file():
             raise ValueError(f"Reviewed training labels not found at {path}")
         return load_reviewed_snapshot(path, entity)
-    if teacher != "snapshot":
-        return None
-    path = BASE / Path(CONFIG.get("snapshot_path", "hn_snapshot_labels.json"))
-    if not path.is_file():
-        raise ValueError(f"Teacher snapshot not found at {path}")
-    snapshot = load_snapshot(path, entity)
-    validate_snapshot_policy(snapshot, CONFIG, entity)
-    return snapshot
+    return None
 
 
-def eligible_comments(session, teacher, entity, snapshot, service=None):
+def eligible_comments(session, teacher, entity, snapshot, service=None, teacher_revision=None):
     aliases, matching = service_policy(entity)
     reviewed = None
-    if service and CONFIG.get("reviewed_training_path"):
+    if CONFIG.get("reviewed_training_path"):
         path = BASE / CONFIG["reviewed_training_path"]
         if path.is_file() and entity.casefold() == CONFIG["monitoring"]["query"].casefold():
             reviewed = load_reviewed_snapshot(path, entity)
     for item in pages(session, "/comments", {"entity": entity}):
-        if teacher == "fixture" and item.get("fixture_label") is None:
-            continue
+        supervision = []
         if snapshot:
             record = snapshot["labels"].get(item["id"])
             if not record:
                 continue
-            if snapshot.get("kind") in {"reviewed", "dataset"}:
-                if record["fingerprint"] != reviewed_fingerprint(item):
-                    raise ValueError(f"Stale {snapshot['kind']} label for comment {item['id']}: raw context changed")
-                item = {**item, "supervision_hash": supervision_hash(record)}
-            elif record["input_hash"] != input_fingerprint(snapshot["entity"], item):
-                continue
+            if record["fingerprint"] != reviewed_fingerprint(item):
+                raise ValueError(f"Stale {snapshot['kind']} label for comment {item['id']}: raw context changed")
+            supervision.append(supervision_hash(record))
+        reviewed_row = reviewed["labels"].get(item["id"]) if reviewed else None
+        if reviewed_row:
+            if reviewed_row["fingerprint"] != reviewed_fingerprint(item):
+                raise ValueError(f"Stale reviewed label for comment {item['id']}: raw context changed")
+            supervision.append(supervision_hash(reviewed_row))
         if service:
-            reviewed_row = reviewed["labels"].get(item["id"]) if reviewed else None
-            target_hash = supervision_hash(reviewed_row) if reviewed_row else ""
-            identity = service.revision + service_input_hash(entity, item, aliases, matching) + target_hash
-            item = {**item, "supervision_hash": hashlib.sha256(identity.encode()).hexdigest()}
+            supervision.append(service.revision + service_input_hash(entity, item, aliases, matching))
+        if teacher_revision:
+            supervision.append(teacher_revision)
+        if supervision:
+            identity = supervision[0] if len(supervision) == 1 else hashlib.sha256(":".join(supervision).encode()).hexdigest()
+            item = {**item, "supervision_hash": identity}
         yield item
 
 
@@ -342,12 +326,23 @@ def train_job(job_id):
         prior = REGISTRY.load(model_id, base_version) if mode == "incremental" else None
         if prior is not None and "training_history" not in prior:
             raise ValueError("This revision predates incremental history. Train once in from_scratch mode.")
+        if prior is not None:
+            aliases, matching = service_policy(entity)
+            policy = {"entity": entity, "aliases": aliases, "options": matching}
+            if prior.get("mention_policy") not in (None, policy):
+                raise ValueError("Mention matching policy changed; train from scratch to apply the new scope")
 
         unlabelled_holdout = []
         with requests.Session() as session:
             service = TeacherService(CONFIG, session) if teacher == "service" else None
             snapshot = teacher_snapshot(teacher, entity)
-            items = eligible_comments(session, teacher, entity, snapshot, service)
+            model_digest = None
+            teacher_revision = None
+            if teacher == "live":
+                job_progress(job_id, stage="preparing_teacher")
+                model_digest = ensure_model(CONFIG)
+                teacher_revision = cache_namespace(CONFIG, model_digest)
+            items = eligible_comments(session, teacher, entity, snapshot, service, teacher_revision)
             if prior is not None:
                 plan = selection.incremental(items, prior["training_history"], limit, CONFIG)
                 if not plan["train"]:
@@ -380,7 +375,9 @@ def train_job(job_id):
                 plan = selection.from_scratch(sample, limit, float(CONFIG["validation_fraction"]))
 
             train, holdout = plan["train"], plan["holdout"]
-            targets, teacher_revision, timing = labels_for(session, job_id, teacher, entity, train + holdout, snapshot, service)
+            targets, teacher_revision, timing = labels_for(
+                session, job_id, teacher, entity, train + holdout, snapshot, service, model_digest,
+            )
 
         job_progress(job_id, stage="fitting", **plan["counts"])
         monitoring = CONFIG["monitoring"]
@@ -539,12 +536,16 @@ def summary(model_id: str):
 
 @app.post("/models/{model_id}/train", status_code=202)
 def start_training(model_id: str, payload: TrainModel):
+    if load_project_config()["offline_demo"] and payload.teacher == "live":
+        raise HTTPException(409, "Offline demo uses saved labels; select dataset or reviewed")
     with LOCK:
         model = model_locked(model_id)
         if model["status"] == "training":
             raise HTTPException(409, "This model already has a training job")
         if payload.mode == "incremental" and model["version"] is None:
             raise HTTPException(409, "Train from scratch before starting incremental training")
+        if payload.mode == "incremental" and model["teacher"] != payload.teacher:
+            raise HTTPException(409, "Teacher changed; train from scratch before switching label sources")
         job_id = uuid4().hex
         job = {
             "id": job_id,
@@ -590,6 +591,6 @@ def validate(model_id: str, payload: Optional[Validation] = None):
             record = next(entry for entry in model_locked(model_id)["versions"] if entry["version"] == version)
         return {"model_id": model_id, "version": version, "metrics": record["metrics"]["holdout"]}
     items = [item.model_dump() for item in payload.items]
-    if not items or not any(item["human_label"] is not None or item["fixture_label"] is not None for item in items):
-        raise HTTPException(422, "Validation items require human_label or fixture_label")
+    if not items or not any(item["human_label"] is not None for item in items):
+        raise HTTPException(422, "Validation items require human_label")
     return {"model_id": model_id, "version": version, "metrics": student.evaluate(artifact, items)}

@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS comments (
     parent_text TEXT,
     url TEXT NOT NULL,
     source TEXT NOT NULL,
-    fixture_label INTEGER CHECK (fixture_label BETWEEN 0 AND 5),
     content_hash TEXT NOT NULL,
     PRIMARY KEY (entity, id)
 );
@@ -77,9 +76,9 @@ END;
 
 UPSERT_COMMENT = """
 INSERT INTO comments (entity, id, story_id, parent_id, published_at, story_title,
-                      text, parent_text, url, source, fixture_label, content_hash)
+                      text, parent_text, url, source, content_hash)
 VALUES (:entity, :id, :story_id, :parent_id, :published_at, :story_title,
-        :text, :parent_text, :url, :source, :fixture_label, :content_hash)
+        :text, :parent_text, :url, :source, :content_hash)
 ON CONFLICT (entity, id) DO UPDATE SET
     story_id = excluded.story_id,
     parent_id = excluded.parent_id,
@@ -89,7 +88,6 @@ ON CONFLICT (entity, id) DO UPDATE SET
     parent_text = excluded.parent_text,
     url = excluded.url,
     source = excluded.source,
-    fixture_label = excluded.fixture_label,
     content_hash = excluded.content_hash
 """
 

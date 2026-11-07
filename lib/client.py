@@ -55,18 +55,18 @@ def monitoring_options(base, *, entity=None, source=None, teacher=None):
 
 
 def train_model(base, entity, teacher, kind, limit, timeout):
-    model = call(base, "/api/models", body={"entity": entity, "kind": kind})
+    model = call(base, "/services/ml/models", body={"entity": entity, "kind": kind})
     model_id = model["id"]
-    job = call(base, f"/api/models/{model_id}/train", body={"teacher": teacher, "limit": limit})
+    job = call(base, f"/services/ml/models/{model_id}/train", body={"teacher": teacher, "limit": limit})
     result = wait_job(base, job["job_id"], timeout)
     assert result["status"] == "succeeded", f"Expected a trained model: {result}"
-    return call(base, f"/api/models/{model_id}/summary")
+    return call(base, f"/services/ml/models/{model_id}/summary")
 
 
 def wait_job(base, job_id, timeout):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        result = call(base, f"/api/jobs/{job_id}")
+        result = call(base, f"/services/ml/jobs/{job_id}")
         if result["status"] in {"succeeded", "skipped"}:
             return result
         if result["status"] == "failed":

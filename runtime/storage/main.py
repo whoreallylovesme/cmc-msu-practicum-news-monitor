@@ -46,7 +46,7 @@ class Comment(CommentRecord):
         record = self.model_dump()
         record["published_at"] = utc_iso(self.published_at)
         record["entity"] = entity
-        context = [self.story_id, self.story_title, self.parent_id, self.parent_text, self.text, self.fixture_label]
+        context = [self.story_id, self.story_title, self.parent_id, self.parent_text, self.text]
         record["content_hash"] = hashlib.sha256(json.dumps(context, ensure_ascii=False).encode("utf-8")).hexdigest()
         return record
 
@@ -102,6 +102,26 @@ def average_score(counts: dict) -> dict:
         **counts,
         "score": counts["score"] / counts["relevant"] if counts["relevant"] else None,
     }
+
+
+def comment_filters(query, from_date, to_date):
+    if from_date is not None and to_date is not None and from_date >= to_date:
+        raise HTTPException(422, "from_date must be earlier than to_date")
+    clauses, parameters = [], []
+    if query:
+        words = re.findall(r"[^\W_]+", query)
+        if words:
+            clauses.append("c.rowid IN (SELECT rowid FROM comment_search WHERE comment_search MATCH ?)")
+            parameters.append(" AND ".join(f'"{word}"' for word in words))
+        else:
+            clauses.append("0")
+    if from_date is not None:
+        clauses.append("c.published_at >= ?")
+        parameters.append(from_date.isoformat())
+    if to_date is not None:
+        clauses.append("c.published_at < ?")
+        parameters.append(to_date.isoformat())
+    return "".join(" AND " + clause for clause in clauses), parameters
 
 
 def check_content(
@@ -184,18 +204,14 @@ def create_app(settings: Settings) -> FastAPI:
         limit: int = Query(default=100, ge=1, le=5000),
         offset: int = Query(default=0, ge=0),
         query: Optional[str] = Query(default=None, max_length=500),
+        from_date: Optional[date] = None,
+        to_date: Optional[date] = None,
     ):
         from_sql = "FROM comments c WHERE c.entity = ?"
         parameters = [entity]
-        if query:
-            words = re.findall(r"[^\W_]+", query)
-            if not words:
-                return {"items": [], "total": 0}
-            from_sql = """
-                FROM comment_search JOIN comments c ON c.rowid = comment_search.rowid
-                WHERE c.entity = ? AND comment_search MATCH ?
-            """
-            parameters.append(" AND ".join(f'"{word}"' for word in words))
+        filters, filter_parameters = comment_filters(query, from_date, to_date)
+        from_sql += filters
+        parameters.extend(filter_parameters)
         with database.connect() as connection:
             connection.execute("BEGIN")
             total = connection.execute("SELECT COUNT(*) " + from_sql, parameters).fetchone()[0]
@@ -256,19 +272,15 @@ def create_app(settings: Settings) -> FastAPI:
         model_id: Identifier,
         limit: int = Query(default=100, ge=1, le=5000),
         offset: int = Query(default=0, ge=0),
+        query: Optional[str] = Query(default=None, max_length=500),
         from_date: Optional[date] = None,
         to_date: Optional[date] = None,
     ):
-        if from_date is not None and to_date is not None and from_date >= to_date:
-            raise HTTPException(422, "from_date must be earlier than to_date")
         from_sql = PREDICTIONS_JOIN + " WHERE p.entity = ? AND p.model_id = ?"
         parameters = [entity, model_id]
-        if from_date is not None:
-            from_sql += " AND c.published_at >= ?"
-            parameters.append(from_date.isoformat())
-        if to_date is not None:
-            from_sql += " AND c.published_at < ?"
-            parameters.append(to_date.isoformat())
+        filters, filter_parameters = comment_filters(query, from_date, to_date)
+        from_sql += filters
+        parameters.extend(filter_parameters)
         with database.connect() as connection:
             connection.execute("BEGIN")
             total = connection.execute("SELECT COUNT(*) " + from_sql, parameters).fetchone()[0]

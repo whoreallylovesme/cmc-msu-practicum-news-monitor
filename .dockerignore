@@ -5,5 +5,4 @@
 **/__pycache__
 **/*.pyc
 **/*.gguf
-runtime/ml/pretrained/cache
 .impeccable

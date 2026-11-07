@@ -529,20 +529,19 @@ def evaluate(artifact, items, teacher_probabilities=None):
                 [teacher_probabilities[index] for index in candidates], probabilities[candidates],
             )
 
-    for label_key, metric_key in [("human_label", "human"), ("fixture_label", "fixture")]:
-        selected = [
-            (item[label_key], probability)
-            for item, probability in zip(items, probabilities)
-            if item.get(label_key) is not None
-        ]
-        if selected:
-            labels, values = zip(*selected)
-            report[metric_key] = label_metrics(labels, values, artifact.get("score_statistic", "mean"))
-            if teacher_probabilities is not None:
-                reference = [
-                    probability
-                    for item, probability in zip(items, teacher_probabilities)
-                    if item.get(label_key) is not None
-                ]
-                report[f"teacher_{metric_key}"] = label_metrics(labels, reference, artifact.get("score_statistic", "mean"))
+    selected = [
+        (item["human_label"], probability)
+        for item, probability in zip(items, probabilities)
+        if item.get("human_label") is not None
+    ]
+    if selected:
+        labels, values = zip(*selected)
+        report["human"] = label_metrics(labels, values, artifact.get("score_statistic", "mean"))
+        if teacher_probabilities is not None:
+            reference = [
+                probability
+                for item, probability in zip(items, teacher_probabilities)
+                if item.get("human_label") is not None
+            ]
+            report["teacher_human"] = label_metrics(labels, reference, artifact.get("score_statistic", "mean"))
     return report

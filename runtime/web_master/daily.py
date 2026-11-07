@@ -18,7 +18,7 @@ def update(args):
     entity, source, teacher = monitoring_options(
         args.url, entity=args.entity, source=args.source, teacher=args.teacher,
     )
-    model_path = f"/api/models/{args.model_id}"
+    model_path = f"/services/ml/models/{args.model_id}"
     model = call(args.url, model_path + "/summary")
     if model["entity"] != entity:
         raise RuntimeError("The model belongs to a different entity")
@@ -43,8 +43,8 @@ def update(args):
         "teacher": teacher, "limit": args.training_limit, "mode": "incremental",
     })
     result = wait_job(args.url, job["job_id"], args.timeout)
-    scoring = call(args.url, model_path + "/score", body={
-        "entity": entity, "limit": args.score_limit,
+    scoring = call(args.url, "/api/score", body={
+        "model_id": args.model_id, "entity": entity, "limit": args.score_limit,
     })
     print(json.dumps({
         "at": datetime.now(timezone.utc).isoformat(),
@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--entity", help="Override the configured monitoring query")
     parser.add_argument("--model-id", required=True)
     parser.add_argument("--source", help="Override the configured monitoring source")
-    parser.add_argument("--teacher", choices=["dataset", "reviewed", "service", "live", "snapshot", "fixture"],
+    parser.add_argument("--teacher", choices=["dataset", "reviewed", "service", "live"],
                         help="Label source; defaults to dataset labels for the Hacker News snapshot")
     parser.add_argument("--pages", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=100)

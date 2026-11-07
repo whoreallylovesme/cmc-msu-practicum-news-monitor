@@ -34,7 +34,7 @@ jobs:
         run: |
           docker compose exec -T ml python - <<'PY'
           from pathlib import Path
-          roots = [Path("/models"), Path("/opt/news-models"), Path("/app/runtime/ml/pretrained/cache")]
+          roots = [Path("/models"), Path("/opt/news-models")]
           weights = [str(path) for root in roots if root.exists() for path in root.rglob("*")
                      if path.is_file() and path.suffix.lower() in {".onnx", ".gguf"}]
           if weights:
