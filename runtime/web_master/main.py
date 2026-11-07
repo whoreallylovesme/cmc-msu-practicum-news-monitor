@@ -54,7 +54,7 @@ SCORE_SCALE = {"min": SCORE_MIN, "max": SCORE_MAX}
 app = FastAPI(
     title="Hacker News Monitor API",
     description=(
-        "The public API for the five-service monitor. Sign in with HTTP Basic. "
+        "The public gateway for all monitor services. Sign in with HTTP Basic. "
         "Readers can view reports and scores. Administrators can also import, train and score."
     ),
 )
