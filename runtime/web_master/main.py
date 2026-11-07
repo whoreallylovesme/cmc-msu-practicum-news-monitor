@@ -1,4 +1,3 @@
-import json
 import logging
 import math
 import os
@@ -257,6 +256,7 @@ def public_config(current_role: str = Depends(role)):
         "role": current_role,
         "entities": [entity_settings(MONITORING["query"])],
         "monitoring": MONITORING,
+        "pipeline": PROJECT["pipeline"],
         "offline_demo": PROJECT["offline_demo"],
         "sources": sources,
         "score_scale": SCORE_SCALE,
@@ -420,12 +420,10 @@ def report(entity: Identifier, model_id: str, bucket: Bucket = "week"):
     data = model_analytics(entity, model, bucket)
     page = TEMPLATES.get_template("report.html").render(
         entity=entity,
-        model=model,
-        teacher=model.get("teacher") or "—",
-        points=[{**point, "count": point["relevant"], "total": point["scored"]}
-                for point in data["periods"]],
+        summary=data["summary"],
+        sources=data["sources"],
+        points=data["periods"],
         score_min=SCORE_MIN,
         score_max=SCORE_MAX,
-        metrics=json.dumps(display_metrics(model.get("metrics") or {}), ensure_ascii=False, indent=2),
     )
-    return HTMLResponse(page, headers={"Content-Disposition": 'attachment; filename="hn-monitor-report.html"'})
+    return HTMLResponse(page, headers={"Content-Disposition": 'inline; filename="hn-monitor-report.html"'})

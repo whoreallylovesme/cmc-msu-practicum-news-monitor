@@ -101,5 +101,5 @@ async def service_request(service: str, path: str, request: Request):
     return forward(result)
 
 
-dashboard = create_dashboard(MASTER, CONFIG["timeout_seconds"])
+dashboard = create_dashboard(MASTER, CONFIG["timeout_seconds"], CONFIG)
 app.mount("/", WSGIMiddleware(dashboard.server))

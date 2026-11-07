@@ -18,6 +18,8 @@ def update(args):
     entity, source, teacher = monitoring_options(
         args.url, entity=args.entity, source=args.source, teacher=args.teacher,
     )
+    if args.training_limit is None:
+        args.training_limit = call(args.url, "/api/config")["pipeline"]["training_limit"]
     model_path = f"/services/ml/models/{args.model_id}"
     model = call(args.url, model_path + "/summary")
     if model["entity"] != entity:
@@ -63,10 +65,10 @@ def main():
     parser.add_argument("--model-id", required=True)
     parser.add_argument("--source", help="Override the configured monitoring source")
     parser.add_argument("--teacher", choices=["dataset", "reviewed", "service", "live"],
-                        help="Label source; defaults to dataset labels for the Hacker News snapshot")
+                        help="Label source; defaults to pipeline.teacher")
     parser.add_argument("--pages", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=100)
-    parser.add_argument("--training-limit", type=int, default=200)
+    parser.add_argument("--training-limit", type=int, help="Defaults to pipeline.training_limit")
     parser.add_argument("--score-limit", type=int, default=500)
     parser.add_argument("--timeout", type=float, default=1800)
     parser.add_argument("--interval-hours", type=float, help="Repeat at this interval, e.g. 24")

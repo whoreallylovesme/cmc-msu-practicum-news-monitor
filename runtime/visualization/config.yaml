@@ -1,2 +1,4 @@
 master_url: http://web_master:8000
 timeout_seconds: 600
+refresh_seconds: 30
+default_bucket: week

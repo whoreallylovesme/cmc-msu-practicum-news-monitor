@@ -2,7 +2,7 @@
 
 import math
 from datetime import datetime, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
@@ -34,8 +34,16 @@ class MonitoringConfig(BaseModel):
     matching: MentionMatchingConfig = Field(default_factory=MentionMatchingConfig)
 
 
+class PipelineConfig(BaseModel):
+    model_id: Optional[Identifier] = None
+    model_kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = "hard_label"
+    teacher: Literal["dataset", "reviewed", "service", "live"] = "dataset"
+    training_limit: int = Field(default=10000, ge=4, le=10000)
+
+
 class ProjectConfig(BaseModel):
     monitoring: MonitoringConfig
+    pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
     offline_demo: bool
     path_to_offline_demo_data: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 

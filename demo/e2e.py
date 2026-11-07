@@ -85,23 +85,28 @@ def main(argv=None):
     parser.add_argument("--entity", help="Must match the labelled dataset entity")
     parser.add_argument("--source", choices=["hn_snapshot"], default="hn_snapshot")
     parser.add_argument("--teacher", choices=["dataset"], default="dataset")
-    parser.add_argument("--kind", choices=["hard_label", "softmax", "tiny_mlp"], default="hard_label")
+    parser.add_argument("--kind", choices=["hard_label", "softmax", "tiny_mlp"], help="Defaults to pipeline.model_kind")
     parser.add_argument("--compare", action="store_true", help="also train softmax, or hard_label when another small kind is first")
     parser.add_argument("--pages", type=int, default=101)
     parser.add_argument("--batch-size", type=int, default=100)
-    parser.add_argument("--training-limit", type=int, default=10000)
+    parser.add_argument("--training-limit", type=int, help="Defaults to pipeline.training_limit")
     parser.add_argument("--timeout", type=float, default=1200)
     args = parser.parse_args(argv)
     if args.pages < 1 or not 1 <= args.batch_size <= 100:
         parser.error("use at least one page and a batch size between 1 and 100")
     expected_items = DATASETS[args.dataset]
-    if not expected_items <= args.training_limit <= 10000:
-        parser.error(f"the complete dataset demo needs --training-limit between {expected_items} and 10000")
     dataset = load_dataset(args.dataset)
     wait_ready(args.url, args.timeout)
     entity, source, teacher = monitoring_options(args.url, entity=args.entity, source=args.source, teacher=args.teacher)
     assert entity.strip().casefold() == dataset["entity"].casefold(), "Configured entity does not match dataset labels"
     config = call(args.url, "/api/config")
+    args.kind = args.kind or config["pipeline"]["model_kind"]
+    if args.kind not in {"hard_label", "softmax", "tiny_mlp"}:
+        parser.error("the prepared demo requires a small classifier: hard_label, softmax or tiny_mlp")
+    if args.training_limit is None:
+        args.training_limit = config["pipeline"]["training_limit"]
+    if not expected_items <= args.training_limit <= 10000:
+        parser.error(f"the complete dataset demo needs --training-limit between {expected_items} and 10000")
     monitoring = config["monitoring"]
     aliases = monitoring["aliases"] if entity.casefold() == monitoring["query"].casefold() else []
     matcher = MentionMatcher(entity, aliases, monitoring["matching"])

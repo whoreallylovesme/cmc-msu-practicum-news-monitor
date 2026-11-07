@@ -47,17 +47,20 @@ def wait_ready(base, timeout):
 
 
 def monitoring_options(base, *, entity=None, source=None, teacher=None):
-    monitoring = call(base, "/api/config")["monitoring"] if entity is None or source is None else {}
+    config = call(base, "/api/config") if entity is None or source is None or teacher is None else {}
+    monitoring = config.get("monitoring", {})
     selected_entity = monitoring["query"] if entity is None else entity
     selected_source = monitoring["source"] if source is None else source
-    selected_teacher = teacher or ("dataset" if selected_source == "hn_snapshot" else "reviewed")
+    selected_teacher = config["pipeline"]["teacher"] if teacher is None else teacher
     return selected_entity, selected_source, selected_teacher
 
 
 def train_model(base, entity, teacher, kind, limit, timeout):
     model = call(base, "/services/ml/models", body={"entity": entity, "kind": kind})
     model_id = model["id"]
-    job = call(base, f"/services/ml/models/{model_id}/train", body={"teacher": teacher, "limit": limit})
+    job = call(base, f"/services/ml/models/{model_id}/train", body={
+        "teacher": teacher, "limit": limit, "mode": "from_scratch",
+    })
     result = wait_job(base, job["job_id"], timeout)
     assert result["status"] == "succeeded", f"Expected a trained model: {result}"
     return call(base, f"/services/ml/models/{model_id}/summary")

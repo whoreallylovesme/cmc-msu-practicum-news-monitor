@@ -55,6 +55,7 @@ if os.environ.get("ML_MODEL_LOCAL_PATH"):
     CONFIG["model_weights"] = {"path": os.environ["ML_MODEL_LOCAL_PATH"], "is_local": True}
 weights_source(CONFIG)
 CONFIG["monitoring"] = load_monitoring()
+PIPELINE = load_project_config()["pipeline"]
 
 DATA = Path(os.environ.get("MONITOR_DATA_DIR", CONFIG["data_dir"]))
 DATA.mkdir(parents=True, exist_ok=True)
@@ -94,13 +95,13 @@ class Comment(BaseModel):
 
 class CreateModel(BaseModel):
     entity: str = Field(min_length=1, max_length=200)
-    kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = "hard_label"
+    kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = PIPELINE["model_kind"]
 
 
 class TrainModel(BaseModel):
-    teacher: Literal["dataset", "reviewed", "service", "live"] = "dataset"
+    teacher: Literal["dataset", "reviewed", "service", "live"] = PIPELINE["teacher"]
     mode: Literal["from_scratch", "incremental"] = "from_scratch"
-    limit: int = Field(default=3000, ge=4, le=10000)
+    limit: int = Field(default=PIPELINE["training_limit"], ge=4, le=10000)
 
 
 class Inference(BaseModel):
