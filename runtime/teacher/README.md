@@ -33,7 +33,7 @@ the assets in the persistent `teacher-encoder-weights` volume. To prefetch them
 explicitly after starting Teacher:
 
 ```sh
-docker compose --profile training exec teacher python prepare.py
+docker compose -p hn-monitor-demo-1k --profile training exec teacher python prepare.py
 ```
 
 To use Teacher, create a model with `POST /services/ml/models` in the main Swagger,
