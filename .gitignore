@@ -5,4 +5,7 @@ __pycache__/
 .env
 .local-data/
 models/*.gguf
-runtime/ml/pretrained/cache/
+.impeccable/
+# Runtime output belongs in volumes or .local-data; prepared datasets live in demo/.
+runtime/**/*.json
+runtime/**/*.joblib

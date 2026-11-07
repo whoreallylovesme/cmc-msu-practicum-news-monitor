@@ -1,0 +1,16 @@
+monitoring:
+  query: ChatGPT
+  aliases:
+    - Chat GPT
+  source: hacker_news
+  matching:
+    allow_typos: true
+    allow_context: true
+    context_hints: []
+pipeline:
+  model_id: null
+  model_kind: hard_label
+  teacher: dataset
+  training_limit: 10000
+offline_demo: true
+path_to_offline_demo_data: demo/hn_1k.json

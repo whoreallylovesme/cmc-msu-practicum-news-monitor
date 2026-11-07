@@ -1,0 +1,11 @@
+services:
+  ml:
+    environment:
+      ML_MODEL_LOCAL_PATH: /local-model/teacher.gguf
+    volumes:
+      - type: bind
+        source: ${MODEL_LOCAL_PATH:?Set MODEL_LOCAL_PATH to a local GGUF file}
+        target: /local-model/teacher.gguf
+        read_only: true
+        bind:
+          create_host_path: false

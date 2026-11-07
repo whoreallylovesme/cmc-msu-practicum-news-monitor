@@ -1,0 +1,127 @@
+{
+  "title": "Prepared real Hacker News comments about ChatGPT",
+  "dataset_kind": "public_discussion_snapshot_with_silver_labels",
+  "source_api": "https://hn.algolia.com/api/v1",
+  "site": "https://news.ycombinator.com/",
+  "attribution": "Public Hacker News comments; each record links to its individual original.",
+  "query": "ChatGPT",
+  "aliases": [
+    "Chat GPT"
+  ],
+  "matching": {
+    "allow_typos": true,
+    "allow_context": true,
+    "context_hints": []
+  },
+  "thread_count": 60,
+  "comment_count": 1000,
+  "mention_candidate_count": 148,
+  "min_comment_date": "2024-01-11T04:09:31+00:00",
+  "max_comment_date": "2026-11-01T18:00:32+00:00",
+  "sha256": "5a1c6827085ed25caf79f7a9ca14afdd9b17907042620554833d290d1fb48ce0",
+  "bytes": 1195555,
+  "raw_snapshot_sha256": "98386e07bc0f77ea5837f09f54a232d015698fec2c73f9620fe40fb43d5e501c",
+  "seed_snapshot_sha256": "cf06169bb296a3a5c14cf836fb8d0d7053bcb7286ff7d5525d1130c038fd0fc5",
+  "collection_metadata_sha256": "5b3657370043e9c732f84c8e100edab8f4dbc6e706e268ba061128080addabbf",
+  "collection": {
+    "query": "ChatGPT",
+    "aliases": [
+      "Chat GPT"
+    ],
+    "source_api": "https://hn.algolia.com/api/v1",
+    "attribution": "Real public Hacker News comments; original comment URLs retained; author fields omitted.",
+    "cutoff_exclusive_UTC": "2026-11-07T18:29:37+00:00",
+    "original_comments": 2124,
+    "new_comments": 7876,
+    "total_comments": 10000,
+    "thread_count": 60,
+    "original_base_sha256": "cf06169bb296a3a5c14cf836fb8d0d7053bcb7286ff7d5525d1130c038fd0fc5",
+    "original_rows_byte_semantics_preserved": true,
+    "new_rows_from_excluded_stories": 0,
+    "text_normalization": "HTML decoded/stripped and whitespace collapsed; new text capped1200, immediate-parent text1000; e-mail/private-key text skipped. Original objects untouched.",
+    "selection": "Original2124 mandatory +7876 unique new rows, round-robin chronological selection across fetched eligible threads; independent of sentiment.",
+    "sorting": {
+      "stories": [
+        "date",
+        "numeric story_id"
+      ],
+      "comments": [
+        "published_at UTC",
+        "numeric id"
+      ]
+    },
+    "API_request_count": 60,
+    "API_concurrency_limit": 3,
+    "eligible_new_rows_before_selection": 18127,
+    "raw_file_bytes": 10159637,
+    "raw_file_sha256": "98386e07bc0f77ea5837f09f54a232d015698fec2c73f9620fe40fb43d5e501c",
+    "excluded_new_story_count": 20
+  },
+  "ordering": "Discussions by UTC date (or earliest included comment when absent)/thread id; comments by UTC published_at/id.",
+  "prepared_labels": {
+    "entity": "ChatGPT",
+    "comments": 1000,
+    "classes": {
+      "A": 6,
+      "B": 20,
+      "C": 92,
+      "D": 18,
+      "E": 1,
+      "F": 863
+    },
+    "sources": {
+      "assistant_reviewed": 52,
+      "mention_rule_off_topic": 852,
+      "model:bundled-0d1306b262b0f5ec9b46": 96
+    },
+    "class_meaning": {
+      "A": "negative",
+      "B": "weak_negative",
+      "C": "neutral",
+      "D": "weak_positive",
+      "E": "positive",
+      "F": "off_topic"
+    },
+    "score_by_class": {
+      "A": 0,
+      "B": 1.25,
+      "C": 2.5,
+      "D": 3.75,
+      "E": 5
+    },
+    "fingerprint_fields": [
+      "text",
+      "parent_text",
+      "story_title",
+      "story_id",
+      "parent_id"
+    ],
+    "protocol": "hn-static-silver-v3",
+    "monitoring_config_sha256": "67036a4e704544d91dcde85e480c8e842d453c4b534fbe9f215237064a44a687",
+    "new_candidate_teacher": {
+      "kind": "frozen_base_nli_plus_54_parameter_head",
+      "model_id": "bundled-0d1306b262b0f5ec9b46",
+      "artifact_sha256": "0d1306b262b0f5ec9b46b799014f4a9c4f27339c7001614fa84f2f9bb75c7ca0",
+      "encoder_sha256": "d46fa6c1addc598abd34af8651120291f51417ddfce45b9d5f70bc32d3efa81c",
+      "tokenizer_sha256": "bfead76cd475f67849a6710fdd16497f75732773e4d90e40d3b5bb5d3f031df9",
+      "preparation_device": "CPUExecutionProvider",
+      "label_decision": "six-class argmax"
+    },
+    "limitation": "Assistant labels retained only for identical original context; other labels are mention rules or model silver. This is static training/demo material, not independent human gold or an accuracy benchmark."
+  },
+  "limitation": "Purposive sample of ChatGPT discussion threads, not a representative HN census. Underlying comment copyrights remain with their authors; no separate comment license is asserted.",
+  "subset_of": {
+    "file": "hn_10k.json",
+    "sha256": "48b9e747f7aedeb62a7c088a8e7c1e3f75329fd814ec5788451fbbb275598917",
+    "selection_protocol": "hn-1k-class-stratified-sha256-v1",
+    "classes": {
+      "A": 6,
+      "B": 20,
+      "C": 92,
+      "D": 18,
+      "E": 1,
+      "F": 863
+    },
+    "method": "Largest-remainder proportional class quotas, minimum one per class; SHA256(protocol NUL comment id) within class. At least two threads; if needed swap the last selected same-class hash with the first hash from another thread."
+  }
+}

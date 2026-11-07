@@ -1,0 +1,106 @@
+x-health: &health
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).close()"]
+  interval: 5s
+  timeout: 3s
+  retries: 10
+
+services:
+  teacher:
+    profiles: [training]
+    build:
+      context: .
+      dockerfile: runtime/teacher/Dockerfile
+    environment:
+      TEACHER_ENCODER_CACHE_DIR: /opt/news-teacher-models
+    volumes:
+      - ./runtime/teacher/config.yaml:/app/runtime/teacher/config.yaml:ro
+      - teacher-encoder-weights:/opt/news-teacher-models
+    ports:
+      - "127.0.0.1:${MONITOR_TEACHER_PORT:-8082}:8000"
+    healthcheck: *health
+
+  collector:
+    build:
+      context: .
+      dockerfile: runtime/collector/Dockerfile
+    environment:
+      MONITOR_DATASET_PATH: ${MONITOR_DATASET_PATH:-}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - collector-data:/data
+      - ./runtime/collector/config.yaml:/app/runtime/collector/config.yaml:ro
+    healthcheck: *health
+
+  storage:
+    build:
+      context: .
+      dockerfile: runtime/storage/Dockerfile
+    volumes:
+      - storage-data:/data
+      - ./runtime/storage/config.yaml:/app/runtime/storage/config.yaml:ro
+    healthcheck: *health
+
+  ml:
+    build:
+      context: .
+      dockerfile: runtime/ml/Dockerfile
+      target: ${ML_IMAGE_TARGET:-runtime}
+    environment:
+      STORAGE_URL: http://storage:8000
+      MONITOR_DATA_DIR: /data
+      MONITOR_DATASET_PATH: ${MONITOR_DATASET_PATH:-}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ml-data:/data
+      - teacher-models:/models
+      - student-weights:/opt/news-models
+      - ./runtime/ml/config.yaml:/app/runtime/ml/config.yaml:ro
+    depends_on:
+      storage:
+        condition: service_healthy
+    healthcheck: *health
+
+  web_master:
+    build:
+      context: .
+      dockerfile: runtime/web_master/Dockerfile
+    environment:
+      MONITOR_ADMIN_USER: ${MONITOR_ADMIN_USER:-admin}
+      MONITOR_ADMIN_PASSWORD: ${MONITOR_ADMIN_PASSWORD:-admin-demo}
+      MONITOR_VIEWER_USER: ${MONITOR_VIEWER_USER:-viewer}
+      MONITOR_VIEWER_PASSWORD: ${MONITOR_VIEWER_PASSWORD:-viewer-demo}
+      MONITOR_DATASET_PATH: ${MONITOR_DATASET_PATH:-}
+    ports:
+      - "127.0.0.1:${MONITOR_API_PORT:-8081}:8000"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./runtime/web_master/config.yaml:/app/runtime/web_master/config.yaml:ro
+    depends_on:
+      collector:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      ml:
+        condition: service_healthy
+    healthcheck: *health
+
+  visualization:
+    build:
+      context: .
+      dockerfile: runtime/visualization/Dockerfile
+    volumes:
+      - ./runtime/visualization/config.yaml:/app/runtime/visualization/config.yaml:ro
+    ports:
+      - "127.0.0.1:${MONITOR_UI_PORT:-8080}:8000"
+    depends_on:
+      web_master:
+        condition: service_healthy
+    healthcheck: *health
+
+volumes:
+  collector-data:
+  storage-data:
+  ml-data:
+  teacher-models:
+  student-weights:
+  teacher-encoder-weights:

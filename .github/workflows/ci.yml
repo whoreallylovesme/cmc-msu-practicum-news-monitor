@@ -1,0 +1,54 @@
+name: Snapshot demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: snapshot-demo-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        dataset: [1k, 10k]
+    env:
+      MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install demo configuration reader
+        run: python3 -m pip install -r demo/requirements.txt
+      - name: Validate Compose
+        run: docker compose config --quiet
+      - name: Start the five services
+        run: docker compose up --build --wait
+      - name: Run the snapshot E2E
+        run: python3 demo/e2e.py --config demo/${{ matrix.dataset }}.yaml
+      - name: Verify the demo did not fetch NN weights
+        run: |
+          docker compose exec -T ml python - <<'PY'
+          from pathlib import Path
+          import logging
+          from lib.cli import configure_logging
+          configure_logging()
+          roots = [Path("/models"), Path("/opt/news-models")]
+          weights = [str(path) for root in roots if root.exists() for path in root.rglob("*")
+                     if path.is_file() and path.suffix.lower() in {".onnx", ".gguf"}]
+          if weights:
+              raise SystemExit(f"Unexpected NN weights in the default demo cache: {weights}")
+          logging.getLogger("ci").info("Default dataset demo used no ONNX/GGUF cache files")
+          PY
+      - name: Print logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
