@@ -184,7 +184,7 @@ python3 demo/e2e.py --config demo/1k.yaml
 Нативный вариант: Python 3.12, виртуальное окружение, `pip install -r requirements.txt`,
 затем `python demo/run.py --config demo/1k.yaml`. При `native.base_port: 8100` Web Master будет на 8103, GUI — 8104, Teacher — 8105.
 Для нативного E2E задайте в копии YAML `check.url: http://127.0.0.1:8103` и передайте её через `--config`.
-Остальные параметры запуска, пути и режимы также задаются в YAML; отдельного набора CLI-флагов нет.
+У `demo/start.py`, `demo/run.py` и `demo/e2e.py` параметры запуска, пути и режимы задаются в YAML; единственный параметр командной строки — `--config`.
 Ежедневное обновление: `python runtime/web_master/daily.py --model-id <id>`; для новых данных подготовьте метки или подключите Teacher.
 
 - `lib/` — общие контракты, конфигурация, HTTP-клиент, упоминания и веса;
