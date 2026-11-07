@@ -6,3 +6,6 @@ __pycache__/
 .local-data/
 models/*.gguf
 .impeccable/
+# Runtime output belongs in volumes or .local-data; prepared datasets live in demo/.
+runtime/**/*.json
+runtime/**/*.joblib
