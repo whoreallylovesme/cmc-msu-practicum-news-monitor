@@ -1,0 +1,487 @@
+{
+  "artifact": "student.joblib",
+  "model": {
+    "id": "bundled-0d1306b262b0f5ec9b46",
+    "entity": "ChatGPT",
+    "kind": "semantic",
+    "status": "ready",
+    "version": 1,
+    "teacher": "reviewed",
+    "mode": "from_scratch",
+    "metrics": {
+      "mode": "from_scratch",
+      "base_version": null,
+      "training_items": 1920,
+      "training_threads": 48,
+      "holdout": {
+        "items": 204,
+        "threads": 12,
+        "student_ms_per_item": 0.08021302945802317,
+        "candidate_items": 56,
+        "student_ms_per_candidate": 0.2922046073113701,
+        "timing_note": "Current prepared/in-process feature caches are included; this is not an uncached backbone benchmark."
+      },
+      "optimization": {
+        "features": 8,
+        "hidden_units": 0,
+        "parameters": 54,
+        "iterations": 181,
+        "converged": true,
+        "objective": 1.0202064800332502,
+        "warm_started": false,
+        "encoder_frozen": true,
+        "encoder_sha256": "d46fa6c1addc598abd34af8651120291f51417ddfce45b9d5f70bc32d3efa81c",
+        "encoder_bytes": 738563249,
+        "factorization": "binary relevance and five-class conditional sentiment",
+        "training_candidates": 544,
+        "training_examples": 1632,
+        "scope_excluded": 1376
+      },
+      "fresh_items": 1920,
+      "fresh_holdout_items": 204,
+      "replay_items": 0,
+      "label_source": {
+        "kind": "assistant_reviewed",
+        "annotator": "Codex assistant, blind manual review",
+        "sourcefile_sha": "1ba53568458ed67e6e1b90c69022f4e923712803db3611294723330c3a3b9009",
+        "training_only": true,
+        "limitation": "Assistant-authored annotations, not human gold. Blind to teacher predictions and held-out evaluation labels. All 544 eligible training mentions were reviewed; no 2026 evaluation comment is included."
+      },
+      "reviewed_training": {
+        "reviewed_items": 544,
+        "weight": 3,
+        "copies_added": 1088,
+        "sourcefile_sha": "1ba53568458ed67e6e1b90c69022f4e923712803db3611294723330c3a3b9009",
+        "status": "applied",
+        "source_entity": "ChatGPT"
+      },
+      "assistant_reference": {
+        "annotator": "Codex assistant blind audit",
+        "limitation": "Assistant labels, not human ground truth; one blind pass over a fixed hash-selected fresh corpus, without model predictions or previous evaluation references. Ambiguous cases retain confidence flags; every selected comment is preserved.",
+        "scope": "New audit threads never enter training; report generated after fixed candidate selection",
+        "reviewed_comments": 120,
+        "in_scope_comments": 100,
+        "scope_excluded_comments": 20,
+        "all_confidence_levels_included": true,
+        "student": {
+          "items": 100,
+          "score_statistic": "median",
+          "relevance_accuracy": 0.94,
+          "relevance_macro_f1": 0.8333333333333333,
+          "score_mae": 0.5459770114942529,
+          "scored_items": 87,
+          "unscored_relevant_items": 4,
+          "polarity_definition": "argmax of summed negative, neutral and positive probabilities; rejection is an error",
+          "relevance_precision": 0.9775280898876404,
+          "relevance_recall": 0.9560439560439561,
+          "class_accuracy": 0.59,
+          "class_macro_f1": 0.40300876375550904,
+          "present_class_macro_f1": 0.40300876375550904,
+          "confusion_matrix": [
+            [
+              2,
+              1,
+              4,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              12,
+              1,
+              0,
+              2
+            ],
+            [
+              0,
+              3,
+              42,
+              5,
+              0,
+              2
+            ],
+            [
+              1,
+              0,
+              8,
+              5,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              8
+            ]
+          ],
+          "per_class": {
+            "A": {
+              "precision": 0.6666666666666666,
+              "recall": 0.2857142857142857,
+              "f1-score": 0.4,
+              "support": 7.0
+            },
+            "B": {
+              "precision": 0.3333333333333333,
+              "recall": 0.11764705882352941,
+              "f1-score": 0.17391304347826086,
+              "support": 17.0
+            },
+            "C": {
+              "precision": 0.6363636363636364,
+              "recall": 0.8076923076923077,
+              "f1-score": 0.711864406779661,
+              "support": 52.0
+            },
+            "D": {
+              "precision": 0.38461538461538464,
+              "recall": 0.35714285714285715,
+              "f1-score": 0.37037037037037035,
+              "support": 14.0
+            },
+            "E": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 1.0
+            },
+            "F": {
+              "precision": 0.6666666666666666,
+              "recall": 0.8888888888888888,
+              "f1-score": 0.7619047619047619,
+              "support": 9.0
+            },
+            "accuracy": 0.59,
+            "macro avg": {
+              "precision": 0.4479409479409479,
+              "recall": 0.4095142330436448,
+              "f1-score": 0.40300876375550904,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 0.5480885780885781,
+              "recall": 0.59,
+              "f1-score": 0.5481579893400085,
+              "support": 100.0
+            }
+          },
+          "sentiment_polarity_items": 91,
+          "sentiment_polarity_accuracy": 0.6263736263736264,
+          "sentiment_polarity_macro_f1": 0.5656043640539764,
+          "entity_polarity_accuracy": 0.64,
+          "entity_polarity_macro_f1": 0.5915404377914402,
+          "predicted_classes": {
+            "0": 3,
+            "1": 6,
+            "2": 66,
+            "3": 13,
+            "5": 12
+          }
+        }
+      }
+    },
+    "created_at": "2026-11-07T14:50:33.961196+00:00",
+    "updated_at": "2026-11-07T14:50:33.961196+00:00",
+    "last_error": null,
+    "versions": [
+      {
+        "version": 1,
+        "teacher": "reviewed",
+        "teacher_revision": "reviewed-1ba53568458ed67e6e1b90c69022f4e923712803db3611294723330c3a3b9009",
+        "mode": "from_scratch",
+        "base_version": null,
+        "trained_at": "2026-11-07T14:50:33.961196+00:00",
+        "metrics": {
+          "mode": "from_scratch",
+          "base_version": null,
+          "training_items": 1920,
+          "training_threads": 48,
+          "holdout": {
+            "items": 204,
+            "threads": 12,
+            "student_ms_per_item": 0.08021302945802317,
+            "candidate_items": 56,
+            "student_ms_per_candidate": 0.2922046073113701,
+            "timing_note": "Current prepared/in-process feature caches are included; this is not an uncached backbone benchmark."
+          },
+          "optimization": {
+            "features": 8,
+            "hidden_units": 0,
+            "parameters": 54,
+            "iterations": 181,
+            "converged": true,
+            "objective": 1.0202064800332502,
+            "warm_started": false,
+            "encoder_frozen": true,
+            "encoder_sha256": "d46fa6c1addc598abd34af8651120291f51417ddfce45b9d5f70bc32d3efa81c",
+            "encoder_bytes": 738563249,
+            "factorization": "binary relevance and five-class conditional sentiment",
+            "training_candidates": 544,
+            "training_examples": 1632,
+            "scope_excluded": 1376
+          },
+          "fresh_items": 1920,
+          "fresh_holdout_items": 204,
+          "replay_items": 0,
+          "label_source": {
+            "kind": "assistant_reviewed",
+            "annotator": "Codex assistant, blind manual review",
+            "sourcefile_sha": "1ba53568458ed67e6e1b90c69022f4e923712803db3611294723330c3a3b9009",
+            "training_only": true,
+            "limitation": "Assistant-authored annotations, not human gold. Blind to teacher predictions and held-out evaluation labels. All 544 eligible training mentions were reviewed; no 2026 evaluation comment is included."
+          },
+          "reviewed_training": {
+            "reviewed_items": 544,
+            "weight": 3,
+            "copies_added": 1088,
+            "sourcefile_sha": "1ba53568458ed67e6e1b90c69022f4e923712803db3611294723330c3a3b9009",
+            "status": "applied",
+            "source_entity": "ChatGPT"
+          },
+          "assistant_reference": {
+            "annotator": "Codex assistant blind audit",
+            "limitation": "Assistant labels, not human ground truth; one blind pass over a fixed hash-selected fresh corpus, without model predictions or previous evaluation references. Ambiguous cases retain confidence flags; every selected comment is preserved.",
+            "scope": "New audit threads never enter training; report generated after fixed candidate selection",
+            "reviewed_comments": 120,
+            "in_scope_comments": 100,
+            "scope_excluded_comments": 20,
+            "all_confidence_levels_included": true,
+            "student": {
+              "items": 100,
+              "score_statistic": "median",
+              "relevance_accuracy": 0.94,
+              "relevance_macro_f1": 0.8333333333333333,
+              "score_mae": 0.5459770114942529,
+              "scored_items": 87,
+              "unscored_relevant_items": 4,
+              "polarity_definition": "argmax of summed negative, neutral and positive probabilities; rejection is an error",
+              "relevance_precision": 0.9775280898876404,
+              "relevance_recall": 0.9560439560439561,
+              "class_accuracy": 0.59,
+              "class_macro_f1": 0.40300876375550904,
+              "present_class_macro_f1": 0.40300876375550904,
+              "confusion_matrix": [
+                [
+                  2,
+                  1,
+                  4,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  2,
+                  12,
+                  1,
+                  0,
+                  2
+                ],
+                [
+                  0,
+                  3,
+                  42,
+                  5,
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  0,
+                  8,
+                  5,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  8
+                ]
+              ],
+              "per_class": {
+                "A": {
+                  "precision": 0.6666666666666666,
+                  "recall": 0.2857142857142857,
+                  "f1-score": 0.4,
+                  "support": 7.0
+                },
+                "B": {
+                  "precision": 0.3333333333333333,
+                  "recall": 0.11764705882352941,
+                  "f1-score": 0.17391304347826086,
+                  "support": 17.0
+                },
+                "C": {
+                  "precision": 0.6363636363636364,
+                  "recall": 0.8076923076923077,
+                  "f1-score": 0.711864406779661,
+                  "support": 52.0
+                },
+                "D": {
+                  "precision": 0.38461538461538464,
+                  "recall": 0.35714285714285715,
+                  "f1-score": 0.37037037037037035,
+                  "support": 14.0
+                },
+                "E": {
+                  "precision": 0.0,
+                  "recall": 0.0,
+                  "f1-score": 0.0,
+                  "support": 1.0
+                },
+                "F": {
+                  "precision": 0.6666666666666666,
+                  "recall": 0.8888888888888888,
+                  "f1-score": 0.7619047619047619,
+                  "support": 9.0
+                },
+                "accuracy": 0.59,
+                "macro avg": {
+                  "precision": 0.4479409479409479,
+                  "recall": 0.4095142330436448,
+                  "f1-score": 0.40300876375550904,
+                  "support": 100.0
+                },
+                "weighted avg": {
+                  "precision": 0.5480885780885781,
+                  "recall": 0.59,
+                  "f1-score": 0.5481579893400085,
+                  "support": 100.0
+                }
+              },
+              "sentiment_polarity_items": 91,
+              "sentiment_polarity_accuracy": 0.6263736263736264,
+              "sentiment_polarity_macro_f1": 0.5656043640539764,
+              "entity_polarity_accuracy": 0.64,
+              "entity_polarity_macro_f1": 0.5915404377914402,
+              "predicted_classes": {
+                "0": 3,
+                "1": 6,
+                "2": 66,
+                "3": 13,
+                "5": 12
+              }
+            }
+          }
+        },
+        "holdout_story_ids": [
+          "48849059",
+          "48996571",
+          "49010345",
+          "49281916",
+          "49527396",
+          "49550614",
+          "49614720",
+          "49776729",
+          "49971846",
+          "50207405",
+          "50247630",
+          "50314699"
+        ],
+        "training_story_ids": [
+          "38941942",
+          "39156778",
+          "39360724",
+          "39450669",
+          "39733605",
+          "39782876",
+          "39896462",
+          "40055269",
+          "40474716",
+          "40522844",
+          "40627558",
+          "40763133",
+          "40957990",
+          "41027658",
+          "41217313",
+          "41349020",
+          "41550907",
+          "41609393",
+          "41732634",
+          "42008569",
+          "42067474",
+          "42129064",
+          "42330732",
+          "42453660",
+          "42611844",
+          "42745847",
+          "42989320",
+          "42997340",
+          "43425561",
+          "43431522",
+          "43723408",
+          "43725648",
+          "43854776",
+          "44089156",
+          "44185913",
+          "44367638",
+          "44491071",
+          "44595492",
+          "44840728",
+          "45026886",
+          "45199713",
+          "45375477",
+          "45569350",
+          "45702397",
+          "45904551",
+          "46086771",
+          "46103376",
+          "46273466"
+        ],
+        "artifact_bytes": 100094,
+        "artifact_sha256": "0d1306b262b0f5ec9b46b799014f4a9c4f27339c7001614fa84f2f9bb75c7ca0",
+        "mention_policy": {
+          "entity": "ChatGPT",
+          "aliases": [
+            "Chat GPT"
+          ],
+          "options": {
+            "allow_typos": true,
+            "allow_context": true,
+            "context_hints": []
+          }
+        },
+        "score_statistic": "median"
+      }
+    ],
+    "bundled": true,
+    "mention_policy": {
+      "entity": "ChatGPT",
+      "aliases": [
+        "Chat GPT"
+      ],
+      "options": {
+        "allow_typos": true,
+        "allow_context": true,
+        "context_hints": []
+      }
+    },
+    "score_statistic": "median",
+    "recommended": true
+  }
+}

@@ -1,0 +1,35 @@
+backend: nli
+model_name: MoritzLaurer/deberta-v3-large-zeroshot-v2.0
+model_revision: cf44676c28ba7312e5c5f8f8d2c22b3e0c9cdae2
+model_weights:
+  path: https://huggingface.co/MoritzLaurer/deberta-v3-large-zeroshot-v2.0/resolve/cf44676c28ba7312e5c5f8f8d2c22b3e0c9cdae2/onnx/model.onnx
+  is_local: false
+  sha256: beded3d71421ceb718861af381d1a0d29037b3679c7350ebd41edbf79cdced1e
+  size_bytes: 1741985401
+tokenizer:
+  path: https://huggingface.co/MoritzLaurer/deberta-v3-large-zeroshot-v2.0/resolve/cf44676c28ba7312e5c5f8f8d2c22b3e0c9cdae2/onnx/tokenizer.json
+  is_local: false
+  sha256: bfead76cd475f67849a6710fdd16497f75732773e4d90e40d3b5bb5d3f031df9
+  size_bytes: 8649136
+cache_dir: .local-data/teacher-models
+threads: 2
+max_length: 512
+pad_token_id: 0
+pad_token: '[PAD]'
+download_timeout: 180
+class_mapping:
+- A
+- C
+- E
+nli:
+  entailment_index: 0
+  premise_template: '{text}'
+  hypotheses:
+  - The author expresses a negative opinion about {entity}.
+  - The author makes a neutral or factual statement about {entity}.
+  - The author expresses a positive opinion about {entity}.
+sequence:
+  input_format: pair
+  text_template: '{text}'
+  target_template: '{entity}'
+max_model_bytes: 2147483648

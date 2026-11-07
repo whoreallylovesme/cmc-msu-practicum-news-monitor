@@ -1,0 +1,19 @@
+services:
+  collector: http://collector:8000
+  storage: http://storage:8000
+  ml: http://ml:8000
+  visualization: http://visualization:8000
+timeouts:
+  default: 8
+  collector: 120
+  ml: 180
+local_accounts:
+  admin:
+    username: admin
+    password: admin-demo
+  viewer:
+    username: viewer
+    password: viewer-demo
+score_scale:
+  min: 0
+  max: 5

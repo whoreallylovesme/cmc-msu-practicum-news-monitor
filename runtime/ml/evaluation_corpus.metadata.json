@@ -1,0 +1,132 @@
+{
+  "fetched_at": "2026-11-07T15:35:34.100741+00:00",
+  "stories": [
+    {
+      "story_id": "47840980",
+      "title": "OpenAI ad partner now selling ChatGPT ad placements based on “prompt relevance”",
+      "gated_available": 29,
+      "other_available": 132
+    },
+    {
+      "story_id": "46786672",
+      "title": "CISA’s acting head uploaded sensitive files into public version of ChatGPT",
+      "gated_available": 14,
+      "other_available": 235
+    },
+    {
+      "story_id": "49315630",
+      "title": "ChatGPT lost 22 points of web share in a year",
+      "gated_available": 9,
+      "other_available": 45
+    },
+    {
+      "story_id": "46949401",
+      "title": "Testing Ads in ChatGPT",
+      "gated_available": 43,
+      "other_available": 245
+    },
+    {
+      "story_id": "46772495",
+      "title": "I let ChatGPT analyze a decade of my Apple Watch data, then I called my doctor",
+      "gated_available": 34,
+      "other_available": 197
+    },
+    {
+      "story_id": "48777728",
+      "title": "I Wasn't Allowed Prompting ChatGPT During My Chalk Talk: This Is Discrimination (2025)",
+      "gated_available": 17,
+      "other_available": 124
+    },
+    {
+      "story_id": "47444812",
+      "title": "Walmart: ChatGPT checkout converted 3x worse than website",
+      "gated_available": 36,
+      "other_available": 238
+    },
+    {
+      "story_id": "47707253",
+      "title": "ChatGPT Pro now starts at $100/month",
+      "gated_available": 21,
+      "other_available": 230
+    },
+    {
+      "story_id": "47739305",
+      "title": "Tell HN: OpenAI silently removed Study Mode from ChatGPT",
+      "gated_available": 12,
+      "other_available": 66
+    },
+    {
+      "story_id": "48507278",
+      "title": "\"Don't You Just Upload It to ChatGPT?\"",
+      "gated_available": 22,
+      "other_available": 363
+    },
+    {
+      "story_id": "47903126",
+      "title": "Amateur armed with ChatGPT solves an Erdős problem",
+      "gated_available": 65,
+      "other_available": 491
+    },
+    {
+      "story_id": "49510517",
+      "title": "ChatGPT to face tougher regulation in the EU",
+      "gated_available": 5,
+      "other_available": 11
+    },
+    {
+      "story_id": "46541533",
+      "title": "ChatGPT Health is a marketplace, guess who is the product?",
+      "gated_available": 46,
+      "other_available": 240
+    },
+    {
+      "story_id": "46652024",
+      "title": "ChatGPT is getting ads. Sam Altman once called them a 'last resort.'",
+      "gated_available": 9,
+      "other_available": 32
+    },
+    {
+      "story_id": "47852835",
+      "title": "ChatGPT Images 2.0",
+      "gated_available": 51,
+      "other_available": 912
+    },
+    {
+      "story_id": "49644047",
+      "title": "Amazon pilots ad services in ChatGPT",
+      "gated_available": 14,
+      "other_available": 76
+    },
+    {
+      "story_id": "49539233",
+      "title": "ChatGPT ad targeting is garbage",
+      "gated_available": 13,
+      "other_available": 71
+    },
+    {
+      "story_id": "47955789",
+      "title": "Eka’s robotic claw feels like we're approaching a ChatGPT moment",
+      "gated_available": 6,
+      "other_available": 230
+    },
+    {
+      "story_id": "49432879",
+      "title": "OpenAI restores 5-hour Codex and Work limits for ChatGPT Plus users",
+      "gated_available": 6,
+      "other_available": 119
+    },
+    {
+      "story_id": "49727041",
+      "title": "OpenAI expands ChatGPT ads with Sponsored Agents",
+      "gated_available": 16,
+      "other_available": 165
+    }
+  ],
+  "comments": 120,
+  "gated_comments": 100,
+  "nongated_comments": 20,
+  "corpus_sha256": "c9542b8928209f4f6ec8b6b96ce86e5e302dedca8d245aa38ed9233a32ccdf9b",
+  "source": "https://hn.algolia.com/api/v1",
+  "no_old_story_overlap": true,
+  "no_model_predictions_read": true
+}

@@ -1,0 +1,6 @@
+-r runtime/collector/requirements.txt
+-r runtime/storage/requirements.txt
+-r runtime/ml/requirements.txt
+-r runtime/teacher/requirements.txt
+-r runtime/web_master/requirements.txt
+-r runtime/visualization/requirements.txt

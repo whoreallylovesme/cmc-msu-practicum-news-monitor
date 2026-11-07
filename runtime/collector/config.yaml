@@ -1,0 +1,10 @@
+fixture_path: fixture.json
+data_dir: data
+live:
+  base_url: https://hn.algolia.com/api/v1
+  lookback_days: 30
+  timeout_seconds: 8
+  min_request_interval_seconds: 0.1
+  stories_per_page: 15
+  requests_per_batch: 12
+  max_response_bytes: 16000000

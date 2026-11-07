@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Hacker News · {{ entity }}</title>
+  <style>
+    body { font: 16px system-ui; max-width: 850px; margin: 3rem auto; padding: 0 1rem; }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #ccc; padding: .5rem; text-align: left; }
+    pre { white-space: pre-wrap; background: #f4f4f4; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Настроение обсуждений · {{ entity }}</h1>
+  <p>Модель {{ model.kind }}, версия {{ model.version }} · учитель {{ teacher }}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Период (UTC)</th>
+        <th>Балл {{ "%g"|format(score_min) }}–{{ "%g"|format(score_max) }}</th>
+        <th>По теме</th>
+        <th>Всего</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for point in points %}
+      <tr>
+        <td>{{ point.date }}</td>
+        <td>{{ "%.2f"|format(point.score) if point.score is not none else "—" }}</td>
+        <td>{{ point.count }}</td>
+        <td>{{ point.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h2>Валидация модели</h2>
+  <pre>{{ metrics }}</pre>
+</body>
+</html>

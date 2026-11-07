@@ -1,0 +1,8 @@
+host: 0.0.0.0
+port: 8000
+data_dir: data
+database: monitor.sqlite3
+log: storage.jsonl
+busy_timeout_seconds: 5
+log_max_bytes: 1048576
+log_backups: 3

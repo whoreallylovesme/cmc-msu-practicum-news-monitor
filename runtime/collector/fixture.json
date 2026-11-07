@@ -1,0 +1,1214 @@
+[
+  {
+    "title": "A month using ChatGPT for code review",
+    "comments": [
+      {
+        "id": "demo-comment-01-01",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T10:17:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "ChatGPT missed a permissions bug and insisted the patch was safe. I would never use this to approve a change.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-01-02",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T10:34:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "It kept suggesting changes to files that were not in the diff. I spent longer explaining the context than reviewing it myself.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-01-03",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T10:51:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "We used it on eight pull requests, all in the same Go service.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-01-04",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T11:08:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "ChatGPT caught a couple of awkward names. For the straightforward reviews it saved me some time.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-01-05",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T11:25:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "It spotted a nasty race in my review branch. It is the first automated review tool I would enthusiastically recommend.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-01-06",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-story-01",
+        "published_at": "2026-11-03T11:42:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "Anyone know which font the screenshots use? The uppercase I looks unusual.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-01-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-01-07",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-comment-01-04",
+        "published_at": "2026-11-03T11:59:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "The suggestions are often sound when I provide the complete diff. I will keep it in the workflow.",
+        "parent_text": "ChatGPT caught a couple of awkward names. For the straightforward reviews it saved me some time.",
+        "url": "https://example.invalid/archive/demo-comment-01-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-01-08",
+        "story_id": "demo-story-01",
+        "parent_id": "demo-comment-01-04",
+        "published_at": "2026-11-03T12:16:00+00:00",
+        "story_title": "A month using ChatGPT for code review",
+        "text": "The review summaries were excellent. It has become the most useful part of ChatGPT for our small team.",
+        "parent_text": "ChatGPT caught a couple of awkward names. For the straightforward reviews it saved me some time.",
+        "url": "https://example.invalid/archive/demo-comment-01-08",
+        "source": "hacker_news",
+        "fixture_label": 4
+      }
+    ]
+  },
+  {
+    "title": "Using ChatGPT to navigate a large codebase",
+    "comments": [
+      {
+        "id": "demo-comment-02-01",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T10:17:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "It invented entire packages in the repository. Its answers were actively worse than searching the tree myself.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-02-02",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T10:34:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "ChatGPT is too eager to guess where a function lives. It sent a new teammate down the wrong path twice.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-02-03",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T10:51:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "The example project has about 40 modules and the test code is stored in a separate directory.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-02-04",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T11:08:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "It gives me decent starting points for unfamiliar modules. I still check the references.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-02-05",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T11:25:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "This is where ChatGPT has been genuinely transformative for me. I understand a new project in an afternoon.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-02-06",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-story-02",
+        "published_at": "2026-10-31T11:42:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "The directory names remind me of an old Erlang project I maintained in 2009.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-02-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-02-07",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-comment-02-04",
+        "published_at": "2026-10-31T11:59:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "It correctly traced a call through three layers and found the relevant tests. I would gladly use this again.",
+        "parent_text": "It gives me decent starting points for unfamiliar modules. I still check the references.",
+        "url": "https://example.invalid/archive/demo-comment-02-07",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-02-08",
+        "story_id": "demo-story-02",
+        "parent_id": "demo-comment-02-04",
+        "published_at": "2026-10-31T12:16:00+00:00",
+        "story_title": "Using ChatGPT to navigate a large codebase",
+        "text": "As a guide for onboarding, ChatGPT has been more useful than our existing wiki search.",
+        "parent_text": "It gives me decent starting points for unfamiliar modules. I still check the references.",
+        "url": "https://example.invalid/archive/demo-comment-02-08",
+        "source": "hacker_news",
+        "fixture_label": 3
+      }
+    ]
+  },
+  {
+    "title": "ChatGPT memory settings under discussion",
+    "comments": [
+      {
+        "id": "demo-comment-03-01",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T10:17:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "I cannot trust ChatGPT with any personal information when the memory controls behave like this. I deleted my account.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-03-02",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T10:34:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "Having to open three different screens to understand what is retained makes this a poor experience.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-03-03",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T10:51:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "The dialog has a checkbox and a link to a separate management page.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-03-04",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T11:08:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "The new list makes it easier to see what it remembers. At least I can clean up individual entries now.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-03-05",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T11:25:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "Being able to review and delete each memory is excellent. This finally makes ChatGPT feel useful and under my control.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-03-06",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-story-03",
+        "published_at": "2026-10-28T11:42:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "The regulation mentioned here also changed how my utility company sends statements.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-03-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-03-07",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-comment-03-04",
+        "published_at": "2026-10-28T11:59:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "These settings still leave too much room for confusion. I switched memory off.",
+        "parent_text": "The new list makes it easier to see what it remembers. At least I can clean up individual entries now.",
+        "url": "https://example.invalid/archive/demo-comment-03-07",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-03-08",
+        "story_id": "demo-story-03",
+        "parent_id": "demo-comment-03-04",
+        "published_at": "2026-10-28T12:16:00+00:00",
+        "story_title": "ChatGPT memory settings under discussion",
+        "text": "I am appalled that a basic deletion workflow was this hard to find.",
+        "parent_text": "The new list makes it easier to see what it remembers. At least I can clean up individual entries now.",
+        "url": "https://example.invalid/archive/demo-comment-03-08",
+        "source": "hacker_news",
+        "fixture_label": 0
+      }
+    ]
+  },
+  {
+    "title": "What happened to ChatGPT reliability last week?",
+    "comments": [
+      {
+        "id": "demo-comment-04-01",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T10:17:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "ChatGPT lost my input three times and then made up details on the fourth attempt. Completely unusable.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-04-02",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T10:34:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "The repeated outages broke a workflow I depend on. I am looking at alternatives.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-04-03",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T10:51:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "I saw the incident notice at 18:00 UTC, and it was marked resolved later that evening.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-04-04",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T11:08:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "It recovered quickly for me, and after restarting the browser the history was intact.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-04-05",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T11:25:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "Support recovered my missing conversation and explained what happened. That response was fantastic.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-04-06",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-story-04",
+        "published_at": "2026-10-25T11:42:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "My ISP had a separate fiber outage on Monday. The repair took two days.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-04-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-04-07",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-comment-04-04",
+        "published_at": "2026-10-25T11:59:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "Even outside the outage the interface still froze while I was drafting. This is disappointing.",
+        "parent_text": "It recovered quickly for me, and after restarting the browser the history was intact.",
+        "url": "https://example.invalid/archive/demo-comment-04-07",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-04-08",
+        "story_id": "demo-story-04",
+        "parent_id": "demo-comment-04-04",
+        "published_at": "2026-10-25T12:16:00+00:00",
+        "story_title": "What happened to ChatGPT reliability last week?",
+        "text": "After losing half a day to it I removed ChatGPT from our workflow altogether.",
+        "parent_text": "It recovered quickly for me, and after restarting the browser the history was intact.",
+        "url": "https://example.invalid/archive/demo-comment-04-08",
+        "source": "hacker_news",
+        "fixture_label": 0
+      }
+    ]
+  },
+  {
+    "title": "ChatGPT for drafting documentation",
+    "comments": [
+      {
+        "id": "demo-comment-05-01",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T10:17:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "ChatGPT produced confident documentation for options that do not exist. I would not let it near published docs again.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-05-02",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T10:34:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "I spent the whole afternoon undoing vague claims and putting the important details back.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-05-03",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T10:51:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "The input was a Markdown file and three Python examples.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-05-04",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T11:08:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "The first outline was usable and the rewrite was clearer after I supplied two examples.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-05-05",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T11:25:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "This is the most helpful writing workflow I have found. It turned a week of editing into one focused session.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-05-06",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-story-05",
+        "published_at": "2026-10-22T11:42:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "What is the Markdown theme used on that site?",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-05-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-05-07",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-comment-05-04",
+        "published_at": "2026-10-22T11:59:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "The tone is occasionally generic, but the structural edits make this well worth using.",
+        "parent_text": "The first outline was usable and the rewrite was clearer after I supplied two examples.",
+        "url": "https://example.invalid/archive/demo-comment-05-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-05-08",
+        "story_id": "demo-story-05",
+        "parent_id": "demo-comment-05-04",
+        "published_at": "2026-10-22T12:16:00+00:00",
+        "story_title": "ChatGPT for drafting documentation",
+        "text": "ChatGPT made the docs more consistent without changing the commands. I am delighted with the result.",
+        "parent_text": "The first outline was usable and the rewrite was clearer after I supplied two examples.",
+        "url": "https://example.invalid/archive/demo-comment-05-08",
+        "source": "hacker_news",
+        "fixture_label": 4
+      }
+    ]
+  },
+  {
+    "title": "A small benchmark for ChatGPT answers",
+    "comments": [
+      {
+        "id": "demo-comment-06-01",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T10:17:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "It got the easy cases wrong and argued with the expected output. I could not take any result from it seriously.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-06-02",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T10:34:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "ChatGPT did poorly on the multi-step prompts, especially when the question used unfamiliar terminology.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-06-03",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T10:51:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "The benchmark has 25 prompts and includes the raw model responses.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-06-04",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T11:08:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "It handled the short questions well enough for a useful first pass.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-06-05",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T11:25:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "The accuracy on my technical examples surprised me. For this kind of task ChatGPT was outstanding.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-06-06",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-story-06",
+        "published_at": "2026-10-19T11:42:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "I like the site that hosts the benchmark. The layout works surprisingly well on an e-reader.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-06-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-06-07",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-comment-06-04",
+        "published_at": "2026-10-19T11:59:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "The score on the lookup tasks is encouraging, though I would test harder examples.",
+        "parent_text": "It handled the short questions well enough for a useful first pass.",
+        "url": "https://example.invalid/archive/demo-comment-06-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-06-08",
+        "story_id": "demo-story-06",
+        "parent_id": "demo-comment-06-04",
+        "published_at": "2026-10-19T12:16:00+00:00",
+        "story_title": "A small benchmark for ChatGPT answers",
+        "text": "Its mistakes were more time-consuming than simply writing the answers myself.",
+        "parent_text": "It handled the short questions well enough for a useful first pass.",
+        "url": "https://example.invalid/archive/demo-comment-06-08",
+        "source": "hacker_news",
+        "fixture_label": 1
+      }
+    ]
+  },
+  {
+    "title": "Trying ChatGPT on old log files",
+    "comments": [
+      {
+        "id": "demo-comment-07-01",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T10:17:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "ChatGPT invented a cause, ignored the real error, and sent us toward a destructive fix. A terrible experience.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-07-02",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T10:34:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "It quoted log lines that were not present and missed the warning right above the error.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-07-03",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T10:51:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "The log file was about 70 KB before it was split into sections.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-07-04",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T11:08:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "The grouping was useful as long as I verified the original lines myself.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-07-05",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T11:25:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "It found the pattern between two unrelated-looking failures. This was an excellent use of ChatGPT.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-07-06",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-story-07",
+        "published_at": "2026-10-16T11:42:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "Our old log rotation setup is still running on a Raspberry Pi in the office.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-07-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-07-07",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-comment-07-04",
+        "published_at": "2026-10-16T11:59:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "I liked the concise timeline it pulled together from messy timestamps.",
+        "parent_text": "The grouping was useful as long as I verified the original lines myself.",
+        "url": "https://example.invalid/archive/demo-comment-07-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-07-08",
+        "story_id": "demo-story-07",
+        "parent_id": "demo-comment-07-04",
+        "published_at": "2026-10-16T12:16:00+00:00",
+        "story_title": "Trying ChatGPT on old log files",
+        "text": "The summary saved me a great deal of time compared to opening the logs one by one.",
+        "parent_text": "The grouping was useful as long as I verified the original lines myself.",
+        "url": "https://example.invalid/archive/demo-comment-07-08",
+        "source": "hacker_news",
+        "fixture_label": 4
+      }
+    ]
+  },
+  {
+    "title": "Does ChatGPT make good study notes?",
+    "comments": [
+      {
+        "id": "demo-comment-08-01",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T10:17:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "It changed a definition to the opposite of what the textbook said. I would actively warn students away from it.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-08-02",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T10:34:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "I found enough subtle errors to make the notes more trouble than they were worth.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-08-03",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T10:51:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "The chapter covered two sorting algorithms and a short proof.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-08-04",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T11:08:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "ChatGPT gave a pretty good outline that I could compare against my lecture notes.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-08-05",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T11:25:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "I finally understood a topic I had struggled with all semester. The worked example was brilliant.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-08-06",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-story-08",
+        "published_at": "2026-10-13T11:42:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "The publisher finally reprinted that textbook last year, after it was unavailable for a decade.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-08-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-08-07",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-comment-08-04",
+        "published_at": "2026-10-13T11:59:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "I will keep it for making flashcards from notes I have already checked.",
+        "parent_text": "ChatGPT gave a pretty good outline that I could compare against my lecture notes.",
+        "url": "https://example.invalid/archive/demo-comment-08-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-08-08",
+        "story_id": "demo-story-08",
+        "parent_id": "demo-comment-08-04",
+        "published_at": "2026-10-13T12:16:00+00:00",
+        "story_title": "Does ChatGPT make good study notes?",
+        "text": "The extra examples were excellent and helped me prepare without getting stuck on the wording.",
+        "parent_text": "ChatGPT gave a pretty good outline that I could compare against my lecture notes.",
+        "url": "https://example.invalid/archive/demo-comment-08-08",
+        "source": "hacker_news",
+        "fixture_label": 4
+      }
+    ]
+  },
+  {
+    "title": "ChatGPT and a pair of data-cleaning tasks",
+    "comments": [
+      {
+        "id": "demo-comment-09-01",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T10:17:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "ChatGPT confidently recommended a transformation that discarded the important rows. I no longer let it near these tasks.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-09-02",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T10:34:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "The date parsing was sloppy and I had to replace most of the proposed code.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-09-03",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T10:51:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "Both datasets used comma-separated text with an irregular header.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-09-04",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T11:08:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "It gave a usable plan after I provided a few examples of the broken rows.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-09-05",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T11:25:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "The cleanup went incredibly smoothly. ChatGPT found cases I had missed and gave me tests for each one.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-09-06",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-story-09",
+        "published_at": "2026-10-10T11:42:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "Which terminal color theme is visible in the code snippets?",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-09-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-09-07",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-comment-09-04",
+        "published_at": "2026-10-10T11:59:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "The code it generated for duplicate handling was useful but needed some review.",
+        "parent_text": "It gave a usable plan after I provided a few examples of the broken rows.",
+        "url": "https://example.invalid/archive/demo-comment-09-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-09-08",
+        "story_id": "demo-story-09",
+        "parent_id": "demo-comment-09-04",
+        "published_at": "2026-10-10T12:16:00+00:00",
+        "story_title": "ChatGPT and a pair of data-cleaning tasks",
+        "text": "It was terrible at detecting records with mixed encodings and ended up corrupting the sample.",
+        "parent_text": "It gave a usable plan after I provided a few examples of the broken rows.",
+        "url": "https://example.invalid/archive/demo-comment-09-08",
+        "source": "hacker_news",
+        "fixture_label": 0
+      }
+    ]
+  },
+  {
+    "title": "A closer look at ChatGPT citations",
+    "comments": [
+      {
+        "id": "demo-comment-10-01",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T10:17:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "Half of the citations were fabricated. I have no trust in ChatGPT as a research assistant after that.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-10-02",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T10:34:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "Even the real references often led to pages that did not support the claim.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-10-03",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T10:51:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "The experiment used seven questions, each with a reference list prepared beforehand.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-10-04",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T11:08:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "I found a few useful references after checking the links and reading the papers.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-10-05",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T11:25:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "The citations in my follow-up were excellent and the links went directly to the relevant sections.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-10-06",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-story-10",
+        "published_at": "2026-10-07T11:42:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "The DOI resolver has a new landing page. I think they changed its design last month.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-10-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-10-07",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-comment-10-04",
+        "published_at": "2026-10-07T11:59:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "I would rather open a search engine myself. The extra checking makes ChatGPT a net loss here.",
+        "parent_text": "I found a few useful references after checking the links and reading the papers.",
+        "url": "https://example.invalid/archive/demo-comment-10-07",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-10-08",
+        "story_id": "demo-story-10",
+        "parent_id": "demo-comment-10-04",
+        "published_at": "2026-10-07T12:16:00+00:00",
+        "story_title": "A closer look at ChatGPT citations",
+        "text": "The paper links looked plausible until I tried them. I would never recommend this mode to a student.",
+        "parent_text": "I found a few useful references after checking the links and reading the papers.",
+        "url": "https://example.invalid/archive/demo-comment-10-08",
+        "source": "hacker_news",
+        "fixture_label": 0
+      }
+    ]
+  },
+  {
+    "title": "A discussion of ChatGPT answers in support workflows",
+    "comments": [
+      {
+        "id": "demo-comment-11-01",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T10:17:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "Its instructions broke a customer account, and it repeated them after being corrected. The experience was awful.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-11-02",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T10:34:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "I have to edit almost every response because it sounds evasive and uses the wrong terms.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-11-03",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T10:51:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "The example queue had about 20 incoming cases each weekday.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-11-04",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T11:08:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "It writes an acceptable summary when there is a clear answer in our notes.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-11-05",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T11:25:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "Our support team now gets through common questions in half the time. ChatGPT has been an excellent addition.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-11-06",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-story-11",
+        "published_at": "2026-10-04T11:42:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "We stopped using that ticketing platform after it removed our preferred email theme.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-11-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-11-07",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-comment-11-04",
+        "published_at": "2026-10-04T11:59:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "The suggested response was missing a crucial troubleshooting step. I would avoid relying on it.",
+        "parent_text": "It writes an acceptable summary when there is a clear answer in our notes.",
+        "url": "https://example.invalid/archive/demo-comment-11-07",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-11-08",
+        "story_id": "demo-story-11",
+        "parent_id": "demo-comment-11-04",
+        "published_at": "2026-10-04T12:16:00+00:00",
+        "story_title": "A discussion of ChatGPT answers in support workflows",
+        "text": "The time spent checking each reply makes it a frustrating tool for our team.",
+        "parent_text": "It writes an acceptable summary when there is a clear answer in our notes.",
+        "url": "https://example.invalid/archive/demo-comment-11-08",
+        "source": "hacker_news",
+        "fixture_label": 1
+      }
+    ]
+  },
+  {
+    "title": "ChatGPT for writing little command-line scripts",
+    "comments": [
+      {
+        "id": "demo-comment-12-01",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T10:17:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "ChatGPT gave me a command that overwrote a directory without warning. I am done using it for shell scripts.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-01",
+        "source": "hacker_news",
+        "fixture_label": 0
+      },
+      {
+        "id": "demo-comment-12-02",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T10:34:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "Its script failed on spaces in filenames and had almost no error handling.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-02",
+        "source": "hacker_news",
+        "fixture_label": 1
+      },
+      {
+        "id": "demo-comment-12-03",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T10:51:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "I ran this example on macOS with Python 3.12.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-03",
+        "source": "hacker_news",
+        "fixture_label": 2
+      },
+      {
+        "id": "demo-comment-12-04",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T11:08:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "It produced a useful skeleton and I could add the missing checks without much work.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-04",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-12-05",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T11:25:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "The script worked immediately on my examples and included tests. For a small task this was fantastic.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-05",
+        "source": "hacker_news",
+        "fixture_label": 4
+      },
+      {
+        "id": "demo-comment-12-06",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-story-12",
+        "published_at": "2026-10-01T11:42:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "I switched from Bash to Fish this summer and now my prompt looks like the screenshot.",
+        "parent_text": null,
+        "url": "https://example.invalid/archive/demo-comment-12-06",
+        "source": "hacker_news",
+        "fixture_label": 5
+      },
+      {
+        "id": "demo-comment-12-07",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-comment-12-04",
+        "published_at": "2026-10-01T11:59:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "The implementation was faster to review than I expected and worked after a couple of small changes.",
+        "parent_text": "It produced a useful skeleton and I could add the missing checks without much work.",
+        "url": "https://example.invalid/archive/demo-comment-12-07",
+        "source": "hacker_news",
+        "fixture_label": 3
+      },
+      {
+        "id": "demo-comment-12-08",
+        "story_id": "demo-story-12",
+        "parent_id": "demo-comment-12-04",
+        "published_at": "2026-10-01T12:16:00+00:00",
+        "story_title": "ChatGPT for writing little command-line scripts",
+        "text": "It handled the corner cases in my input correctly. I would definitely use this approach again.",
+        "parent_text": "It produced a useful skeleton and I could add the missing checks without much work.",
+        "url": "https://example.invalid/archive/demo-comment-12-08",
+        "source": "hacker_news",
+        "fixture_label": 4
+      }
+    ]
+  }
+]

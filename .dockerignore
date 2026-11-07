@@ -1,0 +1,9 @@
+.git
+.venv
+.env
+.local-data
+**/__pycache__
+**/*.pyc
+**/*.gguf
+runtime/ml/pretrained/cache
+.impeccable

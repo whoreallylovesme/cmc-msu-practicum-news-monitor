@@ -1,0 +1,11 @@
+monitoring:
+  query: ChatGPT
+  aliases:
+    - Chat GPT
+  source: hacker_news
+  matching:
+    allow_typos: true
+    allow_context: true
+    context_hints: []
+offline_demo: true
+path_to_offline_demo_data: demo/hn_1k.json

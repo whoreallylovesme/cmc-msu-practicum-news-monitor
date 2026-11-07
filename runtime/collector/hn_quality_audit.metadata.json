@@ -1,0 +1,29 @@
+{
+  "query": "ChatGPT",
+  "aliases": [
+    "Chat GPT"
+  ],
+  "source_api": "https://hn.algolia.com/api/v1",
+  "fetched_at": "2026-11-06T22:24:53.051318+00:00",
+  "thread_count": 12,
+  "comment_count": 60,
+  "direct_mentions": 36,
+  "excluded_comment_count": 2064,
+  "story_ids": [
+    "48849059",
+    "48996571",
+    "49010345",
+    "49281916",
+    "49527396",
+    "49550614",
+    "49614720",
+    "49776729",
+    "49971846",
+    "50207405",
+    "50247630",
+    "50314699"
+  ],
+  "sampling": "Five previously unused comments per twelve held-out2026threads. Stable SHA256(final-blind-v1-ID) selection: up to three direct mentions and two nonmention replies per thread, then fill in hash order. All currentdataset+original144IDs excluded. Comment length30..1200 and parent<=1000, HTML normalized, emails skipped, no author fields. No sentiment or model predictions used for selection.",
+  "limitation": "Stratified target-coverage audit, deliberately overrepresenting direct mentions. Not a population estimate. These threads remain excluded from student training; prompt selection must not use this audit.",
+  "sha256": "0222be2efb7c50c9cb0c7e3c9255bc14fe0024459d7094f6faaec2362d80cc66"
+}

@@ -1,0 +1,849 @@
+{
+  "entity": "ChatGPT",
+  "annotator": "Codex assistant blind audit",
+  "human_gold": false,
+  "limitation": "Assistant labels, not human ground truth; one blind pass over a fixed hash-selected fresh corpus, without model predictions or previous evaluation references. Ambiguous cases retain confidence flags; every selected comment is preserved.",
+  "corpus_sha256": "c9542b8928209f4f6ec8b6b96ce86e5e302dedca8d245aa38ed9233a32ccdf9b",
+  "items": [
+    {
+      "comment_id": "47849501",
+      "label": 1,
+      "confidence": "medium",
+      "rationale": "Считает ChatGPT легко заменимым и критикует ухудшение продукта из-за рекламы.",
+      "fingerprint": "2d57d4d4abe8d9dfc2af8ad89968d4d6623293d4a84a8f1be6c4e3d814439f45"
+    },
+    {
+      "comment_id": "47843808",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает масштаб и запуск рекламной платформы, без оценки качества ChatGPT.",
+      "fingerprint": "863dfdeba7c4e0369e2066fa1d58ff0da4393f1b0fcea077c037de8526772e5c"
+    },
+    {
+      "comment_id": "47849762",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Соглашается с жалобой родителя на выдуманные товары и неработающие ссылки ChatGPT.",
+      "fingerprint": "86e5b2b976c51523b2a68bd0d06c88738386311907d243e74cbb7c325cbfd5d0"
+    },
+    {
+      "comment_id": "47844805",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Использование ChatGPT приводится как пример рекламного таргетинга.",
+      "fingerprint": "d0a233aab3d73ed74008836512e0e1aa653bd8d5fb1c4480090745da52b0f633"
+    },
+    {
+      "comment_id": "47841742",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Критикует риски рекламных инъекций и барьеры для использования агентов ChatGPT.",
+      "fingerprint": "0b09e81d56768d8ef2e82966d921d284ed55a67128c0047f579724742ae233c7"
+    },
+    {
+      "comment_id": "47843433",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Вопрос относится к язвительности обсуждения, а не к ChatGPT.",
+      "fingerprint": "1f3648b0ca5ccd096911491edf2dcd80670dd4c19543a7b160e3506bf68e0bf3"
+    },
+    {
+      "comment_id": "46813012",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Цитирует факт ограничения доступа и специального исключения.",
+      "fingerprint": "077c44f724f12e95612860dc15634d8f0500dfb105b0560451fcf1b457444b5b"
+    },
+    {
+      "comment_id": "46812981",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Пересказывает ограничения безопасности и наличие государственной версии.",
+      "fingerprint": "1a0a4d914f031efb3cb0f459891a8592b04888bb870ab9855ddc7d0a4e7d481e"
+    },
+    {
+      "comment_id": "46819223",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Критикует нарушение правил руководителями, не сам ChatGPT.",
+      "fingerprint": "c313e8a8c1f7eabe2db80ade7624bf2463aa59457f53402c9a83207b6e3681f7"
+    },
+    {
+      "comment_id": "46812984",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Считает необходимым блокировать ChatGPT в организациях с чувствительными данными.",
+      "fingerprint": "f7dbfad7c8e94e110f41dd086d6d6bc22ef721191f2a64697b085105b85d4f50"
+    },
+    {
+      "comment_id": "46822263",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Объясняет корпоративный доступ и договорные условия без прямой оценки продукта.",
+      "fingerprint": "4743c1476cf334c57327deef0347d11770d5f8c46a6c84b48650791489ef740b"
+    },
+    {
+      "comment_id": "46822032",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает полиграфы и отбор сотрудников.",
+      "fingerprint": "4d9e045708967475d968c94702e770639be6ad4452da58b47dda8c1bdf5aa679"
+    },
+    {
+      "comment_id": "49315821",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Анализирует конкуренцию и доли рынка ChatGPT и Gemini.",
+      "fingerprint": "8bb14cc184471712de910d30f3be6cb78b6cda964c91f2cdb86371c32e75d5ed"
+    },
+    {
+      "comment_id": "49316951",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Считает поиск и исследования в ChatGPT заметно лучше, чем в Gemini.",
+      "fingerprint": "f1a1e315387c83df401f31192c093d84c7428eb953a01e57ff83efb02949d02e"
+    },
+    {
+      "comment_id": "49317534",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Указывает ухудшение Deep Research и одновременно простой способ его компенсировать.",
+      "fingerprint": "3d7f6c832d1310236c0731170f751de11c872ea5c6bc3a3e8f545c3669c890b1"
+    },
+    {
+      "comment_id": "49315888",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Прямо оценивает даже прежний ChatGPT выше современного Gemini.",
+      "fingerprint": "1555a445f41f614a8a54a5c62bca8e9fdf57d7fc76baa2b6647fb58c131d4faa"
+    },
+    {
+      "comment_id": "49315859",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Рассуждает о достаточности Gemini для пользователей ChatGPT без ясной оценки ChatGPT.",
+      "fingerprint": "59b51f43f98286c3cbdf03e4f2b7b25c95fc7aa867c0d0e3bc2a7311415c35cd"
+    },
+    {
+      "comment_id": "49315860",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Оценивает положение компании Google.",
+      "fingerprint": "8d235de004180f742ac9293b3041a4c9b70b9fcfeef2d2bdd531f957b0e0bddf"
+    },
+    {
+      "comment_id": "46952264",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сообщает данные о прибыльности тарифов ChatGPT.",
+      "fingerprint": "e91ca880a2573417943591582a136dd1ad037fe808c65493c30cfead9d0316c0"
+    },
+    {
+      "comment_id": "46951475",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Предлагает сценарий блокировки рекламы и использования двух сервисов без явной оценки ChatGPT.",
+      "fingerprint": "22eff2cde658ad1bd327338311a08d5a1f2dd7c8e6a64eb6c7ed37e1083a989a"
+    },
+    {
+      "comment_id": "46951621",
+      "label": 1,
+      "confidence": "medium",
+      "rationale": "Критикует нарушение привычной структуры ответа ChatGPT рекламными вставками.",
+      "fingerprint": "fba8593f750580660705434de4afe9d176a73ba64f02ea11a35cfe407bd8c819"
+    },
+    {
+      "comment_id": "46951252",
+      "label": 5,
+      "confidence": "medium",
+      "rationale": "Критикует обещания и бизнес AI-компаний в целом, без ясной оценки самого ChatGPT.",
+      "fingerprint": "dba91e1b995c0e538534f763b33e911969c0e9f6f29a49590c3c324d0c46726a"
+    },
+    {
+      "comment_id": "46951535",
+      "label": 3,
+      "confidence": "medium",
+      "rationale": "Считает рекламную модель полезной в том числе пользователям ChatGPT.",
+      "fingerprint": "ad167984273d22a9a752aa1435e6388347fee3753f9565ba49d15f10dc2825c3"
+    },
+    {
+      "comment_id": "46950825",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Через непосредственный контекст обсуждает монетизацию ChatGPT и будущие тарифы.",
+      "fingerprint": "0611bbe23960b8586747ee5d7455881d66d2daa039b0be613a35226f1fb358bf"
+    },
+    {
+      "comment_id": "46781808",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Называет ChatGPT заведомым генератором бессмыслицы в важной медицинской ситуации.",
+      "fingerprint": "bc65b83fd172e1ef856eedbdbf900326e46d2b14fa66dbc7ccf4acd2f5e1f4de"
+    },
+    {
+      "comment_id": "46773601",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Даёт ссылки на исходную публикацию о ChatGPT.",
+      "fingerprint": "83ac58337d59d5cfda43525372efb725015f43e957febda87718f90fb0d3a7a1"
+    },
+    {
+      "comment_id": "46777778",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Предупреждает о самоуверенности пользователей и необходимости уважать медицинскую экспертизу.",
+      "fingerprint": "8c54b5a64870c9e948bcd4505d378a85d840fd2d7ef19ed8fc401c3293a02dfa"
+    },
+    {
+      "comment_id": "46777297",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Прямо оскорбляет интеллектуальные способности ChatGPT.",
+      "fingerprint": "f860440c1192c6d1b2fd184e19d93971631f81b1475e99439c922966be527215"
+    },
+    {
+      "comment_id": "46773400",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Обсуждает качество входных данных и распределение ответственности, не хвалит и не отвергает ChatGPT.",
+      "fingerprint": "48ffa04be0b11d3f56130b32c12786489b0bc8985ca9141a93d6002ab5707459"
+    },
+    {
+      "comment_id": "46781386",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает ограничения индекса массы тела.",
+      "fingerprint": "c111c1710ba031715c3e602b02d0070fcfcc8bac0d14a4fb265226cf55b12f94"
+    },
+    {
+      "comment_id": "48778693",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Разбирает использование инструментов и компетентность исследователя; явной оценки ChatGPT нет.",
+      "fingerprint": "6fa18ccb4586dc0d0f1d76e910c99844c8c0cc4f20652d5c8e0df1dc1d71fd27"
+    },
+    {
+      "comment_id": "48778959",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "ChatGPT упомянут в обсуждении сатиры, без оценки продукта.",
+      "fingerprint": "f96d234b9fff627086ff99de0717e6c9c1db365a282c68f983894cd5b3cbc828"
+    },
+    {
+      "comment_id": "48788846",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Насмешка направлена на самостоятельность исследователя, а не качество ChatGPT.",
+      "fingerprint": "686b572ebbe353f1972ae8dc14b46d906ad4cb519618c5251829d48945b9689d"
+    },
+    {
+      "comment_id": "48787830",
+      "label": 3,
+      "confidence": "medium",
+      "rationale": "Защищает допустимость использования ChatGPT учёным как полезного вспомогательного средства.",
+      "fingerprint": "f3fd9b4e07b8558295fce334a38f5adc67a1786a8f2bb594595752baaefc59a2"
+    },
+    {
+      "comment_id": "48782488",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает проверку навыков и стоимость труда, а не качество ChatGPT.",
+      "fingerprint": "109474b1ba20c1f5653b7fd678c3488f11b6f562b8bb9c92894d7c7ac037ed4e"
+    },
+    {
+      "comment_id": "48778930",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Объясняет общую метафору взаимодействия человека с AI.",
+      "fingerprint": "34b2204b474211f048fa88465e77b20abfc6a2b4a5732f5eefa59f7f17d46a43"
+    },
+    {
+      "comment_id": "47495350",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Отказался от подписки из-за рекламы в ChatGPT.",
+      "fingerprint": "0bf781576086d8cfe1f8f6fc014836f9df72b03cc5625e01bed3e9c11b77e84d"
+    },
+    {
+      "comment_id": "47487495",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Критикует участников обсуждения и уход от темы; ChatGPT приводится в примерах.",
+      "fingerprint": "b0ed8224d342eb80d9972ee35a5cb2e7195c1859fd018a19323070e18916ae5b"
+    },
+    {
+      "comment_id": "47488304",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Считает ChatGPT Checkout ненужной помехой и дополнительным риском при покупке.",
+      "fingerprint": "101f0c31f9ea0c6de100fd9fc8da5bd54e31d5f30e17fd8405af97e8992a7431"
+    },
+    {
+      "comment_id": "47499992",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "ChatGPT служит примером рекламной платформы в общем экономическом рассуждении.",
+      "fingerprint": "128130212f004f81f46f956137539f58f23d2292f7999262d2e5a579224d2573"
+    },
+    {
+      "comment_id": "47488415",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Условно интересуется возможностью покупок через ChatGPT, описывая положительный опыт с Gemini.",
+      "fingerprint": "3ccf169652b414c17296bf74e5ecbbe66583fa9ce3796db676d0f9cbef637aa5"
+    },
+    {
+      "comment_id": "47488943",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Рассуждает об LLM в целом, без указания на ChatGPT.",
+      "fingerprint": "2a22653486b59fa482626e29676d6d15169612d25976ada2f318a06837c240fc"
+    },
+    {
+      "comment_id": "47708066",
+      "label": 1,
+      "confidence": "medium",
+      "rationale": "Саркастически уподобляет платные тарифы ChatGPT членству в казино.",
+      "fingerprint": "5f189ffc3a1e45766aeb55c6ebfe607f124477a759645a6ac80670e2cb931f18"
+    },
+    {
+      "comment_id": "47708078",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Оценивает обещания AI-индустрии, а не конкретный продукт ChatGPT.",
+      "fingerprint": "14e56e82296aa484c0ebfe95b4c9c49519f30b9c7fb044f88217255369f9a408"
+    },
+    {
+      "comment_id": "47709047",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сравнивает интерфейс рекурсивной модели с ChatGPT, без оценки качества.",
+      "fingerprint": "e9805de0adb6223bf5449acdafd40f4d6530ff3a4cb1d7423167fa0a1c8a93cb"
+    },
+    {
+      "comment_id": "47707850",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Уточняет название тарифа из заголовка о ChatGPT Pro.",
+      "fingerprint": "68264e3a3bcea261cb3fc0d40852e558db905a1997f3618c18eb976a8a3dc16c"
+    },
+    {
+      "comment_id": "47707368",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Исправляет фактическое описание тарифов и лимитов ChatGPT.",
+      "fingerprint": "ce972780fbafec24cd4369637c5b5c400d2bff4371abe9164dd9b0f60c0e00b2"
+    },
+    {
+      "comment_id": "47713909",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает оплату труда и мотивацию сотрудников.",
+      "fingerprint": "d3fb528797c9399e73725c8b4f354da70f5ab1c4b50907e35ef7e2dfc2ae8ec6"
+    },
+    {
+      "comment_id": "47740884",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Развёрнуто называет ChatGPT почти бесполезным, спамным и самоуверенно ошибающимся.",
+      "fingerprint": "741512e7192921077ce9f1cb2306d48d628806ae39f03dab26b5279db4769eba"
+    },
+    {
+      "comment_id": "47741905",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Спрашивает, можно ли заменить Study Mode обычным запросом к ChatGPT.",
+      "fingerprint": "336cff3ce7a1fd84e42092a06fabf9fbec0516eb11266b19883758d217c2dba0"
+    },
+    {
+      "comment_id": "47742404",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Критикует слабое преподавание и арифметические ошибки ChatGPT.",
+      "fingerprint": "3119b0f3455682e6cb43dbe578b33550a307335205ba0061f5be188f9e8c912c"
+    },
+    {
+      "comment_id": "47743029",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Избегает ChatGPT из-за склонности выдумывать ответы вместо признания незнания.",
+      "fingerprint": "40e03da24ac564566704449c267a00b65eb3b5a10923a84e70d003e2dcd9a0ed"
+    },
+    {
+      "comment_id": "47740249",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Прямо говорит, что нравилось учиться с ChatGPT.",
+      "fingerprint": "e35ffbcdac0f64430175162765192a1a450cb461dc417f7ad0b107e3e892b4ba"
+    },
+    {
+      "comment_id": "47739533",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Спрашивает о воспроизведении Study Mode; объект очевиден из родителя и заголовка.",
+      "fingerprint": "adbc1cd51cda5abb1c587fbf3cd845d704791a0c4b9447898f597b39488c859c"
+    },
+    {
+      "comment_id": "48508361",
+      "label": 5,
+      "confidence": "medium",
+      "rationale": "Рассуждает о возможностях AI вообще; ChatGPT приведён как исторический пример.",
+      "fingerprint": "ab1eea5ad7f8c3ef5dfa4b2c42680ab4f3f8c0f3fe820e64f33fc6a9c42fd822"
+    },
+    {
+      "comment_id": "48511321",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает чужое предположение о возможностях ChatGPT, не давая собственной оценки качества.",
+      "fingerprint": "bb5e6effff1aca1f711019ec8d25bf2c01695009ae1ce73ff134d281e07b1de7"
+    },
+    {
+      "comment_id": "48509365",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает заказ человеческого труда и подмену результата, а не качество ChatGPT.",
+      "fingerprint": "688a9bf1eb5be38ed3fdb1cfeb73801e360802cf0610edfb852464c1ef473730"
+    },
+    {
+      "comment_id": "48507729",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "На собственном примере указывает, что перевод ChatGPT упустил нюансы и тон.",
+      "fingerprint": "c646d1a06d17e1b2a6d96aaeba3673507dc77e7dc24e206c04a1f62edc768397"
+    },
+    {
+      "comment_id": "48507890",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Комментирует происхождение архитектуры трансформеров.",
+      "fingerprint": "e825c08f904a80da8a885bf13a6ea61c75b6e00f216ad54f842c11122744d32c"
+    },
+    {
+      "comment_id": "48514069",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает качество субтитров Netflix.",
+      "fingerprint": "4f9693e29af5a2b9e6b573a786b287d805ce54594a2f7f9ac3dc006dc47b5f53"
+    },
+    {
+      "comment_id": "47912093",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Интерпретирует результат как технически правильный, но трудный для понимания.",
+      "fingerprint": "f3144d6cd8c4912577f2f4b4749eac3053469bc16298fc55da77fe0cb54f8741"
+    },
+    {
+      "comment_id": "47910817",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Рекомендует ChatGPT для обучения и считает бесплатную версию достаточной.",
+      "fingerprint": "79e07cbbc2c25942a69ae7d10bd638510004e2e54d5aefcdeb600a04509302c4"
+    },
+    {
+      "comment_id": "47908365",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Описывает и отличный, и неудачный результат, оставляя вывод о способностях открытым.",
+      "fingerprint": "0e9579292ec87c762c1a1619c31192d2ed182ef4f84d935569c9a6b6d98206cb"
+    },
+    {
+      "comment_id": "47910950",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Цитирует ответ ChatGPT при сравнении доказательств.",
+      "fingerprint": "25b2498fbec529cafc8cee8f78197e4fe1a4108de49041a3eeac020bf8c12425"
+    },
+    {
+      "comment_id": "47908657",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сообщает о быстром ответе Pro и спрашивает о кэшировании или маршрутизации.",
+      "fingerprint": "15bfaef67aad84f4663cf7b9255366a46f9fc38daf5e3e188431492511a2182f"
+    },
+    {
+      "comment_id": "47911770",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Рассуждает о статистической имитации эмоции, без ясного указания на ChatGPT.",
+      "fingerprint": "b3ae581c64a092d82455d5432dc1804667ccff4a6fe883139ce1196720430f7e"
+    },
+    {
+      "comment_id": "49510900",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает нормативную классификацию и обязанности сервиса.",
+      "fingerprint": "0b7aa5ad5cf5d486db6f52b7646cca8190e446840677c36a4f984092991bc5fd"
+    },
+    {
+      "comment_id": "49511122",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сравнивает доступность моделей и критикует регулирование ЕС, не качество ChatGPT.",
+      "fingerprint": "0d9723a16e8eaab49c231e1e65c555c9e8a7db862883f65952dd031ab199b1ea"
+    },
+    {
+      "comment_id": "49511286",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Критика направлена на неопределённость требований ЕС.",
+      "fingerprint": "078b784cbb19c3fe5ac60344a112664033f0555d16a9ddc2c50c4b5bd328a208"
+    },
+    {
+      "comment_id": "49514088",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Разбирает гипотетические требования к чатам и рекламе без оценки качества продукта.",
+      "fingerprint": "aa14f7163acc862eab1e4d97be019b005029bd0d8ba14bc0f91dc3629984081f"
+    },
+    {
+      "comment_id": "49511336",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Критикует непоследовательность регулирования, а не ChatGPT.",
+      "fingerprint": "6e65365b2fc7e7458d01009d46860a79cd2a40ce3cdf84f6131318c29e341b48"
+    },
+    {
+      "comment_id": "49511381",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Сопоставляет функции локальных и облачных LLM в контексте регулирования ChatGPT.",
+      "fingerprint": "c906398828c8f73d16b6e721366d0207806c683f3e01126006860d6814836db8"
+    },
+    {
+      "comment_id": "46565961",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Приводит ошибочную и затем правильную интерпретацию анализов без общего вердикта о ChatGPT.",
+      "fingerprint": "2159d6241114b4d72eedbeb769c553e8a243292d721389585e0c3419005ecbbf"
+    },
+    {
+      "comment_id": "46589758",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Показывает конкретный ошибочный совет ChatGPT о настройке S3.",
+      "fingerprint": "22bc3fa7f3355faf6eda7348404f70bc3f37b70f43798c86ee06d2595a412f5b"
+    },
+    {
+      "comment_id": "46575370",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Отмечает пользу ChatGPT Deep Research и быстрый доступ к научным источникам.",
+      "fingerprint": "07ba6b7db18a7b9f572555b279ee7b8c8241513ffb95d4564f4c30d68164114a"
+    },
+    {
+      "comment_id": "46570730",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Различает критику общего сбора данных и самого ChatGPT.",
+      "fingerprint": "a4db3cf37cc5977dad076d96d279e26006e45e203553a5075d7cdea7dc8d95c3"
+    },
+    {
+      "comment_id": "46567174",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Описывает систематические уверенные ошибки ChatGPT почти во всех сложных вопросах.",
+      "fingerprint": "60b24c225c7f37b118eb428eb9ce20ec30b47784fe62a5dfd31bb2b17a9a9c9e"
+    },
+    {
+      "comment_id": "46571415",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает страховые модели и обход регулирования.",
+      "fingerprint": "33b141785ba33980e15aab02f973cbba7864f61e3a142fdc248f9d0ead0925d1"
+    },
+    {
+      "comment_id": "46652386",
+      "label": 1,
+      "confidence": "medium",
+      "rationale": "Не хочет рекламы в платном ChatGPT и готов перейти на другой сервис.",
+      "fingerprint": "031a04acb4039b87bec6ba895426c2c3147427b86411de448303edd5597a6d1a"
+    },
+    {
+      "comment_id": "46654329",
+      "label": 1,
+      "confidence": "medium",
+      "rationale": "Поддерживает отказ от платного сервиса при появлении рекламы в очевидном контексте ChatGPT.",
+      "fingerprint": "22e312eec82a6f71e69b0fd80017ef9a332cff533a62cbc8164df7f09fd83682"
+    },
+    {
+      "comment_id": "46652321",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Прямо называет ChatGPT мошеннической технологией без законного источника дохода.",
+      "fingerprint": "498f47adadf222fbd7844ab562aace3964451f75f7e77ea8966ab8a8d17913e1"
+    },
+    {
+      "comment_id": "46652160",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Оценивает корпоративные приобретения и уверенность компании, не продукт.",
+      "fingerprint": "209b3c0161b42cbdeba3bd35cca8990254f087a6b9cbcca5944e33ca17324e74"
+    },
+    {
+      "comment_id": "46658475",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сопоставляет узнаваемость и пользовательские базы конкурирующих сервисов.",
+      "fingerprint": "e8151e37cf03c18efb01085bdf130c875eb6aa8f091874b2c652ab651a6f3463"
+    },
+    {
+      "comment_id": "46652200",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Критикует капиталистическую рекламу в целом без конкретной оценки ChatGPT.",
+      "fingerprint": "2315fb04d961d35f29d5690e4a1a6c9be4d0895040b1d8cd05ba2229b7763c9f"
+    },
+    {
+      "comment_id": "47853323",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Подтверждает содержание анонса ChatGPT Images 2.0.",
+      "fingerprint": "154d461f7c756b42ecb9aca798942626f922cca7eca073884cb74bd63163eb90"
+    },
+    {
+      "comment_id": "47863660",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Сообщает о провале генерации QR-кода в ChatGPT.",
+      "fingerprint": "e558635dcc3e53f1c81f82fd173e4ae168e9bea1af38eca443592dc862fa23d2"
+    },
+    {
+      "comment_id": "47863285",
+      "label": 3,
+      "confidence": "medium",
+      "rationale": "Умеренно положительно оценивает созданный комикс как забавный.",
+      "fingerprint": "31c339197126b94609211185ec2c302502ed98652c2e0c46aa75bbdadbe255c5"
+    },
+    {
+      "comment_id": "47860050",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Говорит, что ChatGPT Images сразу сделал изображение непригодным и разрушил качество.",
+      "fingerprint": "7549e43e525c4acb6f2574d45d11efc1a87deab4384913c19a60af9a046830ed"
+    },
+    {
+      "comment_id": "47856013",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Защищает пользу генерации изображений ChatGPT на конкретном примере визуальных советов.",
+      "fingerprint": "099072bb3e0935f24c01198a824bd77d02ece4cd658bec410f994e1d016d3da3"
+    },
+    {
+      "comment_id": "47855476",
+      "label": 5,
+      "confidence": "medium",
+      "rationale": "Критикует AI-контент и генераторы изображений вообще, без оценки конкретного продукта.",
+      "fingerprint": "2a72b52434cc4631a3741765b7b409c1a899d869d9f1b20030b35f0f11786de6"
+    },
+    {
+      "comment_id": "49644579",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Критикует приоритеты технологической индустрии и рекламу в целом.",
+      "fingerprint": "ab4f8a539c1da397caeee445a3e2235ed7d5358b117ae4f8c0d062f2f516b0bc"
+    },
+    {
+      "comment_id": "49645737",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Предлагает объяснение рекомендации через обучающие данные ChatGPT.",
+      "fingerprint": "bbcac930ddc83f28f8553465e609da4553ec51e04d6a83c6b34670b44d642783"
+    },
+    {
+      "comment_id": "49645786",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Описывает показатели рекламных кампаний и неопределённость поискового спроса.",
+      "fingerprint": "706b1da3d7e22eeeea6a0c3c5e3984d8fc442057b36c5e56f6b0dfa55c5bec13"
+    },
+    {
+      "comment_id": "49645799",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Иронизирует над саморекламой приложения, а не оценивает ChatGPT.",
+      "fingerprint": "f3ad3ed9d9cea943ba8b0ba641871de9e4ff4702c0e94d04ce5fdce79dccb804"
+    },
+    {
+      "comment_id": "49649577",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает спрос рекламодателей на аудиторию ChatGPT.",
+      "fingerprint": "e0d7ee837cb70177b021414e3ea60fb972a9370e2719ae27059ffa565188bbe2"
+    },
+    {
+      "comment_id": "49644356",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Предсказывает рекламное ухудшение AI вообще, включая другие модели.",
+      "fingerprint": "8e800413e57cd22167ee9e14a522890fd7cec3e0471bdb56bb150892ba4bb0d7"
+    },
+    {
+      "comment_id": "49540092",
+      "label": 0,
+      "confidence": "high",
+      "rationale": "Называет рекламу ChatGPT полным мусором и бессмысленной тратой денег.",
+      "fingerprint": "8377f1db4d0494244032e0f557e4d99ca55a46880c44e2515647a9099f0c55ae"
+    },
+    {
+      "comment_id": "49539827",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Задаёт вопрос о ставках и возможном объяснении плохого трафика.",
+      "fingerprint": "e090ece519fcfac724ac1f56af8ae984022b5a5e8aa4af602fe82fc181b4fea2"
+    },
+    {
+      "comment_id": "49540248",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Жалуется на ошибочную блокировку рекламы и отсутствие апелляции в ChatGPT.",
+      "fingerprint": "c73017345782841383d257b23bdf811064e0d2ca0bc4d6e17cd5c18ccd44c616"
+    },
+    {
+      "comment_id": "49539988",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Удивляется поведению людей, нажимающих рекламу.",
+      "fingerprint": "d84159a0feca521c548e439c8a1cb745395999ed0e4d3ee831d4726e207e0327"
+    },
+    {
+      "comment_id": "49539774",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Обсуждает влияние низкой ставки на качество рекламных переходов, не давая оценки продукта.",
+      "fingerprint": "7c364da8a390de02042d09157dcff03cbfc2032aa9f163ca9f39e0c1940a1df8"
+    },
+    {
+      "comment_id": "49540301",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Рассуждает о показах рекламы Meta и Alphabet.",
+      "fingerprint": "992e2504623cf43ab4a35c7d2b28009c40fbab58e2d7bc441c86e2e9ece17456"
+    },
+    {
+      "comment_id": "47982877",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сравнивает скорость внедрения робототехники и программных продуктов вроде ChatGPT.",
+      "fingerprint": "05ee3ba50e7887c7ed7618971a9611bb29aad4c82a408366c3e53f7e1f3754d6"
+    },
+    {
+      "comment_id": "47983901",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Признаёт прежнее качество ChatGPT, но скептически оценивает значение события и общий ажиотаж.",
+      "fingerprint": "43f366ad1d300e1b6021d82bfcf63756ce2bbb6a4d61fbd7d4ee5925d51871ee"
+    },
+    {
+      "comment_id": "47981228",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Прямо называет ChatGPT продуктом, полезным обычному человеку.",
+      "fingerprint": "b5d18558446470158bb365780c202f99299daf22f4d3b4d83f698ee303f714ac"
+    },
+    {
+      "comment_id": "47982577",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Описывает масштаб запуска и новой категории продуктов, без ясной оценки полезности ChatGPT.",
+      "fingerprint": "116c97852436fe2287ce054b7667b598b4a9326a9f90da822492871dcddc5a12"
+    },
+    {
+      "comment_id": "47980000",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Прямо считает аналог ChatGPT-момента плохим событием.",
+      "fingerprint": "31289e1664f68eef02c52fed76160f1580dddd8b26427d2e2b4cba5421cf20f8"
+    },
+    {
+      "comment_id": "47981939",
+      "label": 5,
+      "confidence": "high",
+      "rationale": "Обсуждает домены архивного сайта.",
+      "fingerprint": "24eda69e410719ace449d86cf0d83513bea526bc2d077a618da3c3cfb38c57cb"
+    },
+    {
+      "comment_id": "49433742",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Даёт ссылку, уточняющую наличие корпоративных тарифов ChatGPT.",
+      "fingerprint": "19776292c47814e0d91ad539d48a0513255a1d881f9af93984ac9d5b6fefb9ca"
+    },
+    {
+      "comment_id": "49434372",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Хвалит объём доступного использования ChatGPT, отдельную квоту и интеграции.",
+      "fingerprint": "80a041d49847134646164dc34b1f5adec66775f66b120dee984088cbbcfa3e70"
+    },
+    {
+      "comment_id": "49435758",
+      "label": 2,
+      "confidence": "medium",
+      "rationale": "Рассматривает возвращение к использованию ChatGPT без явной оценки его качества.",
+      "fingerprint": "aa40f9a8fd7ecfc6f85522d5fcce25eb4e94b554876c513c07eb4125530076a2"
+    },
+    {
+      "comment_id": "49433780",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Сообщает о скором появлении дополнительных корпоративных мест.",
+      "fingerprint": "d0ad011dc82f2503dadcd0fe5535fcc4e3248850c374206971dbbc83c74d7a2f"
+    },
+    {
+      "comment_id": "49472616",
+      "label": 3,
+      "confidence": "medium",
+      "rationale": "Рекомендует ChatGPT Chat с MCP для бесплатного программирования.",
+      "fingerprint": "7dbdcc01534167805870c452f2b72b20fa3759d2179803774e96d8f3038f61a2"
+    },
+    {
+      "comment_id": "49433491",
+      "label": 1,
+      "confidence": "high",
+      "rationale": "Разочарован изменениями тарифов или лимитов ChatGPT и недоступностью более дорогого плана.",
+      "fingerprint": "35111e37739e5db42b6d7da9fd062ed7b049b9234b230cf68a9c9ce3485b258d"
+    },
+    {
+      "comment_id": "49727734",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Цитирует сведения об отсутствии рекламы в определённых тарифах.",
+      "fingerprint": "7ac9eaae4450866d43965449a99838de1e2e4259e610f35a64e35e3bca99ddd9"
+    },
+    {
+      "comment_id": "49728031",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Явно поддерживает рекламу, если она сохраняет бесплатный доступ к ChatGPT.",
+      "fingerprint": "ecffc388c1fe9192d6b2c970303fb5482e31cc21ffe914ba6c872fa3190fd530"
+    },
+    {
+      "comment_id": "49728899",
+      "label": 3,
+      "confidence": "medium",
+      "rationale": "Ожидает пользы от персонализированной рекламы ChatGPT, хотя оговаривает качество реализации.",
+      "fingerprint": "f7a7ad1febe749434ca37f827cdf17f659acc4223dcd5c4ae6eb39d3bbd19121"
+    },
+    {
+      "comment_id": "49729247",
+      "label": 4,
+      "confidence": "high",
+      "rationale": "Весьма высоко оценивает платный ChatGPT и сообщает об исключительной денежной выгоде.",
+      "fingerprint": "8306ab8bfbf6a50185845dcd6c6ebc9a667159a18faf5451ab0797b3d754eda7"
+    },
+    {
+      "comment_id": "49728000",
+      "label": 2,
+      "confidence": "high",
+      "rationale": "Указывает на бесплатный доступ и необходимость покрывать вычислительные расходы.",
+      "fingerprint": "0a848d269c6e48f5fddf3b78a4b8956ce5153964b4687e9b4229f21f7b74cc84"
+    },
+    {
+      "comment_id": "49727524",
+      "label": 3,
+      "confidence": "high",
+      "rationale": "Поддерживает функцию из заголовка и предпочитает помощь AI ручному изучению рекламируемого сайта.",
+      "fingerprint": "fcc4044d65468a05615ee114d59d083f761d0daf1785759ea5a7eabc406094a2"
+    }
+  ]
+}
