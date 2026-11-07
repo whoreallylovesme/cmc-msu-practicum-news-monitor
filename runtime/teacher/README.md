@@ -18,12 +18,12 @@ establish the quality of its labels.
 ## Run with the monitor
 
 ```sh
-python3 demo/start.py --with-teacher
+python3 demo/start.py --config demo/1k.yaml
 ```
 
 This starts the optional `training` profile. The ordinary demo still trains
 from `dataset`; it does not request new neural labels. Teacher Swagger is at
-[localhost:8082/docs](http://127.0.0.1:8082/docs). `MONITOR_TEACHER_PORT`
+[localhost:8082/docs](http://127.0.0.1:8082/docs). `ports.teacher` in the demo YAML
 changes the published loopback port; ML uses `http://teacher:8000` internally.
 
 The image build installs runtime dependencies without downloading the roughly
@@ -46,11 +46,11 @@ For a native run, select a writable cache and add the optional process:
 
 ```sh
 export TEACHER_ENCODER_CACHE_DIR="$PWD/.local-data/teacher/encoder-weights"
-python demo/run.py --with-teacher
+python demo/run.py --config demo/1k.yaml
 ```
 
 At the default base port 8100, Teacher Swagger uses 8105 and the main gateway
-uses 8103. `--base-port` moves these together. Without `--with-teacher`,
+uses 8103. `native.base_port` in the YAML moves these together. With `with_teacher: false`,
 the original five services start. Teacher failure does not stop those processes.
 
 ## REST and label cache

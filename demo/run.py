@@ -1,5 +1,4 @@
 """Run the five HTTP services and an optional independent teacher."""
-import argparse
 import logging
 import os
 import signal
@@ -12,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from lib.cli import configure_logging
+from lib.cli import configure_logging, load_cli_config
 
 
 LOGGER = logging.getLogger(__name__)
@@ -24,23 +23,23 @@ def stop_on_term(_number, _frame):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-port", type=int, default=8100)
-    parser.add_argument("--data-dir", type=Path)
-    parser.add_argument("--dataset", choices=["1k", "10k"], help="Override the configured snapshot size")
-    parser.add_argument("--with-teacher", action="store_true", help="Also start the independent labeling service")
-    args = parser.parse_args()
-    if args.data_dir is None:
-        selected = args.dataset or Path(os.environ.get("MONITOR_DATASET_PATH", "hn_1k.json")).stem.removeprefix("hn_")
-        args.data_dir = ROOT / ".local-data" / ("demo-" + selected if selected in {"1k", "10k"} else "native")
-    if not 1024 <= args.base_port <= 65531:
-        parser.error("base-port must be between 1024 and 65531")
+    _config_path, settings = load_cli_config(ROOT / "demo/1k.yaml")
+    dataset = settings.get("dataset", "1k")
+    if dataset not in {"1k", "10k"}:
+        raise ValueError("dataset must be 1k or 10k")
+    with_teacher = settings.get("with_teacher", True)
+    native = settings.get("native", {})
+    base_port = int(native.get("base_port", 8100))
+    configured_data = native.get("data_dir")
+    data_dir = Path(configured_data) if configured_data else ROOT / ".local-data" / f"demo-{dataset}"
+    if not data_dir.is_absolute():
+        data_dir = ROOT / data_dir
 
     signal.signal(signal.SIGTERM, stop_on_term)
-    services = SERVICES + (("teacher",) if args.with_teacher else ())
-    if args.base_port + len(services) - 1 > 65535:
-        parser.error("base-port leaves no port for the teacher")
-    ports = {service: args.base_port + index for index, service in enumerate(services)}
+    services = SERVICES + (("teacher",) if with_teacher else ())
+    if not 1024 <= base_port <= 65536 - len(services):
+        raise ValueError("native.base_port must leave a valid port for every service")
+    ports = {service: base_port + index for index, service in enumerate(services)}
     urls = {service: f"http://127.0.0.1:{port}" for service, port in ports.items()}
     common = {
         **os.environ,
@@ -52,21 +51,20 @@ def main():
         "MASTER_URL": urls["web_master"],
         "PYTHONPATH": os.pathsep.join(filter(None, [str(ROOT), os.environ.get("PYTHONPATH")])),
     }
-    if args.dataset is not None:
-        common["MONITOR_DATASET_PATH"] = f"demo/hn_{args.dataset}.json"
-    common.setdefault("ML_MODEL_CACHE_DIR", str(args.data_dir.resolve() / "ml" / "weights"))
-    common.setdefault("ML_ENCODER_CACHE_DIR", str(args.data_dir.resolve() / "ml" / "encoder-weights"))
-    if args.with_teacher:
+    common["MONITOR_DATASET_PATH"] = f"demo/hn_{dataset}.json"
+    common.setdefault("ML_MODEL_CACHE_DIR", str(data_dir.resolve() / "ml" / "weights"))
+    common.setdefault("ML_ENCODER_CACHE_DIR", str(data_dir.resolve() / "ml" / "encoder-weights"))
+    if with_teacher:
         common["TEACHER_SERVICE_URL"] = urls["teacher"]
         common["TEACHER_URL"] = urls["teacher"]
-        common.setdefault("TEACHER_ENCODER_CACHE_DIR", str(args.data_dir.resolve() / "teacher" / "encoder-weights"))
+        common.setdefault("TEACHER_ENCODER_CACHE_DIR", str(data_dir.resolve() / "teacher" / "encoder-weights"))
     common.setdefault("OMP_NUM_THREADS", "2")
     common.setdefault("OPENBLAS_NUM_THREADS", "2")
     processes = {}
     teacher_exit_reported = False
     try:
         for service, port in ports.items():
-            service_data = args.data_dir.resolve() / service
+            service_data = data_dir.resolve() / service
             service_data.mkdir(parents=True, exist_ok=True)
             processes[service] = subprocess.Popen(
                 [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", str(port)],

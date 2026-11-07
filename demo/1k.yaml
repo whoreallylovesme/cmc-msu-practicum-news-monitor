@@ -1,0 +1,20 @@
+dataset: 1k
+with_teacher: true
+ports:
+  api: 8081
+  ui: 8080
+  teacher: 8082
+native:
+  base_port: 8100
+  data_dir: null
+check:
+  url: http://127.0.0.1:8081
+  entity: null
+  source: hn_snapshot
+  teacher: dataset
+  kind: null
+  compare: true
+  pages: 101
+  batch_size: 100
+  training_limit: null
+  timeout: 1200

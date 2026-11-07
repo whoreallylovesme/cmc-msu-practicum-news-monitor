@@ -1,20 +1,21 @@
 """Verify the prelabelled Hacker News demo through the real five-service API."""
 
-import argparse
 import hashlib
 import json
 import logging
 import math
+import os
 import sys
 from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from lib.client import all_items, assert_status, call, monitoring_options, train_model, wait_job, wait_ready
-from lib.cli import configure_logging, write_json
+from lib.cli import configure_logging, load_cli_config, write_json
 from lib.mentions import MentionMatcher
 
 
@@ -80,21 +81,13 @@ def validate_prediction(prediction, comment_id, scale):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--url", default="http://127.0.0.1:8081")
-    parser.add_argument("--dataset", choices=DATASETS, default="1k", help="Prelabelled snapshot size; 1k is a subset of 10k")
-    parser.add_argument("--entity", help="Must match the labelled dataset entity")
-    parser.add_argument("--source", choices=["hn_snapshot"], default="hn_snapshot")
-    parser.add_argument("--teacher", choices=["dataset"], default="dataset")
-    parser.add_argument("--kind", choices=["hard_label", "softmax", "tiny_mlp"], help="Defaults to pipeline.model_kind")
-    parser.add_argument("--compare", action="store_true", help="also train softmax, or hard_label when another small kind is first")
-    parser.add_argument("--pages", type=int, default=101)
-    parser.add_argument("--batch-size", type=int, default=100)
-    parser.add_argument("--training-limit", type=int, help="Defaults to pipeline.training_limit")
-    parser.add_argument("--timeout", type=float, default=1200)
-    args = parser.parse_args(argv)
+    _, config = load_cli_config(ROOT / "demo/1k.yaml", argv)
+    args = SimpleNamespace(**config["check"], dataset=config["dataset"])
+    args.url = os.environ.get("MONITOR_E2E_URL", args.url)
     if args.pages < 1 or not 1 <= args.batch_size <= 100:
-        parser.error("use at least one page and a batch size between 1 and 100")
+        raise ValueError("Use at least one page and a batch size between 1 and 100")
+    if args.source != "hn_snapshot" or args.teacher != "dataset":
+        raise ValueError("The prepared demo requires source hn_snapshot and teacher dataset")
     expected_items = DATASETS[args.dataset]
     dataset = load_dataset(args.dataset)
     wait_ready(args.url, args.timeout)
@@ -103,11 +96,11 @@ def main(argv=None):
     config = call(args.url, "/api/config")
     args.kind = args.kind or config["pipeline"]["model_kind"]
     if args.kind not in {"hard_label", "softmax", "tiny_mlp"}:
-        parser.error("the prepared demo requires a small classifier: hard_label, softmax or tiny_mlp")
+        raise ValueError("The prepared demo requires a small classifier: hard_label, softmax or tiny_mlp")
     if args.training_limit is None:
         args.training_limit = config["pipeline"]["training_limit"]
     if not expected_items <= args.training_limit <= 10000:
-        parser.error(f"the complete dataset demo needs --training-limit between {expected_items} and 10000")
+        raise ValueError(f"The complete dataset demo needs check.training_limit between {expected_items} and 10000")
     monitoring = config["monitoring"]
     aliases = monitoring["aliases"] if entity.casefold() == monitoring["query"].casefold() else []
     matcher = MentionMatcher(entity, aliases, monitoring["matching"])
@@ -130,7 +123,7 @@ def main(argv=None):
             break
         assert cursor not in seen_cursors, "Collector repeated its continuation cursor"
         seen_cursors.add(cursor)
-    assert not cursor, "Snapshot import stopped before the final cursor; increase --pages"
+    assert not cursor, "Snapshot import stopped before the final cursor; increase check.pages"
     assert received == expected_items, f"Expected {expected_items} imported rows, received {received}"
     stored = list(all_items(args.url, "/api/comments", {"entity": entity}))
     ids = [row["id"] for row in stored]

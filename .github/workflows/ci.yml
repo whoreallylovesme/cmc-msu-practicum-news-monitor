@@ -24,12 +24,14 @@ jobs:
       MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
     steps:
       - uses: actions/checkout@v4
+      - name: Install demo configuration reader
+        run: python3 -m pip install -r demo/requirements.txt
       - name: Validate Compose
         run: docker compose config --quiet
       - name: Start the five services
         run: docker compose up --build --wait
       - name: Run the snapshot E2E
-        run: python3 demo/e2e.py --dataset ${{ matrix.dataset }} --compare
+        run: python3 demo/e2e.py --config demo/${{ matrix.dataset }}.yaml
       - name: Verify the demo did not fetch NN weights
         run: |
           docker compose exec -T ml python - <<'PY'
