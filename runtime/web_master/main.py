@@ -172,10 +172,6 @@ class ScoreRequest(BaseModel):
     limit: int = Field(default=500, ge=1, le=10000)
 
 
-class ValidationRequest(BaseModel):
-    items: list[dict] = Field(min_length=1, max_length=500)
-
-
 class PredictionRequest(BaseModel):
     entity: str = Field(min_length=1, max_length=120)
     items: list[TeacherComment] = Field(min_length=1, max_length=100)
@@ -199,18 +195,7 @@ class ScoreResult(BaseModel):
     version: int
 
 
-class Period(BaseModel):
-    date: str
-    score: Optional[float] = Field(description="Average on the configured display scale")
-    count: int = Field(description="Number of scored comments judged relevant")
-    total: int = Field(description="Number of scored comments, including off-topic comments")
-
-
-class Timeline(BaseModel):
-    items: list[Period]
-
-
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok", "service": "web_master"}
 
@@ -268,18 +253,14 @@ async def service_request(service: str, path: str, request: Request, current_rol
     return Response(content=response.content, status_code=response.status_code, headers=outgoing)
 
 
-@app.get("/api/session", tags=["System"])
-def session(current_role: str = Depends(role)):
-    return {"role": current_role}
-
-
-@app.get("/api/config", dependencies=[Depends(role)], tags=["System"])
-def public_config():
+@app.get("/api/config", tags=["System"])
+def public_config(current_role: str = Depends(role)):
     try:
         sources = upstream("collector", "GET", "/sources")["items"]
     except HTTPException:
         sources = []
     return {
+        "role": current_role,
         "entities": [entity_settings(MONITORING["query"])],
         "monitoring": MONITORING,
         "offline_demo": PROJECT["offline_demo"],
@@ -298,7 +279,11 @@ def status():
 
     with ThreadPoolExecutor(max_workers=len(UPSTREAMS)) as executor:
         results = dict(executor.map(probe, UPSTREAMS))
-    return {"services": {"web_master": health(), **results}}
+    try:
+        loads = upstream("collector", "GET", "/loads", params={"limit": 5})["items"]
+    except HTTPException:
+        loads = []
+    return {"services": {"web_master": health(), **results}, "loads": loads}
 
 
 @app.post("/api/import", dependencies=[Depends(admin)], response_model=ImportResult, tags=["Collection"])
@@ -325,20 +310,30 @@ def import_batch(request: ImportRequest):
     }
 
 
-@app.get("/api/loads", dependencies=[Depends(role)], tags=["Collection"])
-def load_history(limit: int = Query(default=15, ge=1, le=100)):
-    return upstream("collector", "GET", "/loads", params={"limit": limit})
-
-
 @app.get("/api/comments", dependencies=[Depends(role)], tags=["Collection"])
 def comments(
     entity: str,
+    model_id: Optional[str] = None,
     query: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
-    """Read or search stored comments using SQLite FTS5."""
+    """Read stored comments. Set model_id for scored comments and optional UTC dates.
+
+    Without model_id, query searches the raw archive using SQLite FTS5.
+    """
     entity_settings(entity)
+    if model_id:
+        model = versioned_model(model_id, entity)
+        return display_scores(upstream(
+            "storage", "GET", "/predictions",
+            params={
+                "entity": entity, "model_id": prediction_key(model),
+                "from_date": from_date, "to_date": to_date, "limit": limit, "offset": offset,
+            },
+        ))
     return upstream(
         "storage", "GET", "/comments",
         params={"entity": entity, "query": query, "limit": limit, "offset": offset},
@@ -379,15 +374,6 @@ def train(model_id: str, request: TrainRequest):
 @app.get("/api/jobs/{job_id}", dependencies=[Depends(role)], tags=["Models"])
 def job(job_id: str):
     return display_metrics(upstream("ml", "GET", f"/jobs/{job_id}"))
-
-
-@app.post("/api/models/{model_id}/validate", dependencies=[Depends(admin)], tags=["Models"])
-def validate(model_id: str, request: Optional[ValidationRequest] = None):
-    result = upstream(
-        "ml", "POST", f"/models/{model_id}/validate",
-        data=request.model_dump() if request is not None else None,
-    )
-    return {**display_metrics(result), "score_scale": SCORE_SCALE}
 
 
 @app.post("/api/models/{model_id}/predict", dependencies=[Depends(admin)], tags=["Models"])
@@ -441,18 +427,6 @@ def score(model_id: str, request: ScoreRequest):
     return {"processed": processed, "stored": stored, "version": model["version"]}
 
 
-@app.get("/api/timeline", dependencies=[Depends(role)], response_model=Timeline, tags=["Results"])
-def timeline(entity: str, model_id: str, bucket: Bucket = "week"):
-    """Read the active version's average score and sample size by UTC period."""
-    model = versioned_model(model_id, entity)
-    return display_scores(upstream(
-        "storage",
-        "GET",
-        "/timeline",
-        params={"entity": entity, "model_id": prediction_key(model), "bucket": bucket},
-    ))
-
-
 @app.get("/api/analytics", dependencies=[Depends(role)], tags=["Results"])
 def analytics(entity: str, model_id: Optional[str] = None, bucket: Bucket = "week"):
     """Count mentions in collected comments and report their scored sentiment and sources."""
@@ -487,44 +461,16 @@ def analytics(entity: str, model_id: Optional[str] = None, bucket: Bucket = "wee
     }
 
 
-@app.get("/api/evidence", dependencies=[Depends(role)], tags=["Results"])
-def evidence(
-    entity: str,
-    model_id: str,
-    from_date: Optional[str] = None,
-    to_date: Optional[str] = None,
-    limit: int = Query(default=30, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
-):
-    """Read scored comments. The optional UTC date range includes the start and excludes the end."""
-    model = versioned_model(model_id, entity)
-    return display_scores(upstream(
-        "storage",
-        "GET",
-        "/predictions",
-        params={
-            "entity": entity,
-            "model_id": prediction_key(model),
-            "from_date": from_date,
-            "to_date": to_date,
-            "limit": limit,
-            "offset": offset,
-        },
-    ))
-
-
 @app.get("/api/report", dependencies=[Depends(role)], response_class=HTMLResponse, tags=["Results"])
 def report(entity: str, model_id: str, bucket: Bucket = "week"):
     model = versioned_model(model_id, entity)
-    data = display_scores(upstream(
-        "storage", "GET", "/timeline",
-        params={"entity": entity, "model_id": prediction_key(model), "bucket": bucket},
-    ))
+    data = analytics(entity, model_id, bucket)
     page = TEMPLATES.get_template("report.html").render(
         entity=entity,
         model=model,
         teacher=model.get("teacher") or "—",
-        points=data["items"],
+        points=[{**point, "count": point["relevant"], "total": point["scored"]}
+                for point in data["periods"]],
         score_min=SCORE_MIN,
         score_max=SCORE_MAX,
         metrics=json.dumps(display_metrics(model.get("metrics") or {}), ensure_ascii=False, indent=2),

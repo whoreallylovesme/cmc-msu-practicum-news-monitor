@@ -165,7 +165,7 @@ def create_app(settings: Settings) -> FastAPI:
         logging.getLogger("uvicorn.error").error("Unexpected SQLite error", exc_info=error)
         return JSONResponse({"detail": "Storage operation failed"}, status_code=500)
 
-    @service.get("/health")
+    @service.get("/health", include_in_schema=False)
     def health():
         with database.connect() as connection:
             connection.execute("SELECT 1 FROM comments LIMIT 1").fetchone()
@@ -277,46 +277,6 @@ def create_app(settings: Settings) -> FastAPI:
                 (*parameters, limit, offset),
             ).fetchall()
         return {"items": [parse_prediction(row) for row in rows], "total": total}
-
-    @service.get("/predictions/{comment_id}")
-    def get_prediction(comment_id: Identifier, entity: Identifier, model_id: Identifier):
-        with database.connect() as connection:
-            row = connection.execute(
-                PREDICTIONS_SELECT + PREDICTIONS_JOIN
-                + " WHERE p.entity = ? AND p.model_id = ? AND p.comment_id = ?",
-                (entity, model_id, comment_id),
-            ).fetchone()
-        if row is None:
-            raise HTTPException(404, "Prediction not found")
-        return parse_prediction(row)
-
-    @service.put("/predictions/{comment_id}")
-    def put_prediction(comment_id: Identifier, entity: Identifier, model_id: Identifier, prediction: Prediction):
-        if prediction.comment_id != comment_id:
-            raise HTTPException(422, "Path and payload identify different comments")
-        return save_predictions(PredictionBatch(entity=entity, model_id=model_id, items=[prediction]))
-
-    @service.delete("/predictions/{comment_id}")
-    def delete_prediction(comment_id: Identifier, entity: Identifier, model_id: Identifier):
-        with database.connect(write=True) as connection:
-            cursor = connection.execute(
-                "DELETE FROM predictions WHERE entity = ? AND model_id = ? AND comment_id = ?",
-                (entity, model_id, comment_id),
-            )
-            if not cursor.rowcount:
-                raise HTTPException(404, "Prediction not found")
-        return {"deleted": True}
-
-    @service.get("/timeline")
-    def timeline(entity: Identifier, model_id: Identifier, bucket: Literal["day", "week"] = "day"):
-        date_sql = "date(c.published_at)" if bucket == "day" else "date(c.published_at, '-6 days', 'weekday 1')"
-        with database.connect() as connection:
-            rows = connection.execute(
-                f"SELECT {date_sql} AS date, AVG(p.score) AS score, SUM(p.relevant) AS count, COUNT(*) AS total "
-                + PREDICTIONS_JOIN + " WHERE p.entity = ? AND p.model_id = ? GROUP BY date ORDER BY date",
-                (entity, model_id),
-            ).fetchall()
-        return {"items": [dict(row) for row in rows]}
 
     @service.get("/analytics")
     def analytics(

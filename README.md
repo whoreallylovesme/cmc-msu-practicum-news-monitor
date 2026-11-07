@@ -54,7 +54,7 @@ docker compose -p hn-monitor-demo-1k down
 
 | Сервис | Назначение и основные API |
 |---|---|
-| `runtime/collector` | Источники, `/batch`, `/loads`; батчи и журнал загрузок |
+| `runtime/collector` | `/sources`, `/batches`, `/loads`; батчи и журнал загрузок |
 | `runtime/storage` | SQLite и FTS5; CRUD `/comments`, записи `/labels` и `/predictions` |
 | `runtime/ml` | `/models`, `/train`, `/predict`, `/validate`, `/summary`, `/jobs`; обучение и версии |
 | `runtime/web_master` | Единая точка входа `/api/*`, HTTP Basic, роли и сценарии |
@@ -65,6 +65,16 @@ docker compose -p hn-monitor-demo-1k down
 Общие типы, загрузка конфигов, HTTP-клиент и поиск упоминаний находятся в `lib`.
 Новый источник наследуется от `NewsProvider` и возвращает `News` / `NewsComment`;
 пример подключения описан в [runtime/collector/README.md](runtime/collector/README.md).
+
+Web Master объединяет пользовательские сценарии, а внутренние API отвечают
+за операции своего сервиса. Конфиг и роль возвращаются в `GET /api/config`,
+состояние сервисов и журнал загрузок — в `GET /api/status`.
+`GET /api/analytics` возвращает сводку, периоды и источники;
+`GET /api/comments` — комментарии, а с `model_id` — комментарии с оценками
+и фильтром периода. Отдельных ручек для этих же данных нет.
+У Visualization остаются GUI, Swagger и технический маршрут `/health`.
+Запросы из общего Swagger идут через
+`/services/{service}/…` к владельцу контракта с проверкой прав Web Master.
 
 ## Данные и готовая разметка
 

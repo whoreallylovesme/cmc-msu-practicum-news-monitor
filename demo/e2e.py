@@ -108,7 +108,7 @@ def main(argv=None):
     expected_mentions = sum(matcher.match(row) is not None for row in dataset["items"])
     scale = config.get("score_scale", {"min": 0, "max": 5})
     batch_request = {"entity": entity, "source": source, "limit": args.batch_size}
-    assert_status(args.url, 401, "/api/session", role=None)
+    assert_status(args.url, 401, "/api/config", role=None)
     assert_status(args.url, 403, "/api/import", body=batch_request, role="viewer")
     cursor = None
     seen_cursors = set()
@@ -166,11 +166,11 @@ def main(argv=None):
             and analytics["summary"]["mentions"] == expected_mentions
             and analytics["summary"]["scored"] == expected_items
         ), f"Analytics did not retain {expected_items} comments / {expected_mentions} mentions / {expected_items} predictions"
-        timeline = call(args.url, "/api/timeline", query=params, role="viewer")
+        periods = analytics["periods"]
         assert (
-            timeline["items"] and sum(row["total"] for row in timeline["items"]) == expected_items
+            periods and sum(row["scored"] for row in periods) == expected_items
         ), "Timeline does not cover the full scored dataset"
-        evidence = list(all_items(args.url, "/api/evidence", params))
+        evidence = list(all_items(args.url, "/api/comments", params))
         evidence_ids = [row["comment_id"] for row in evidence]
         assert (
             len(evidence_ids) == len(set(evidence_ids)) == expected_items and set(evidence_ids) == set(expected)
@@ -202,7 +202,7 @@ def main(argv=None):
         results.append({"kind": kind, "model_id": model_id, "version": model["version"],
                         "dataset_labels": labelled, "teacher_inference_items": 0,
                         "scored": scored["stored"], "mentions": analytics["summary"]["mentions"],
-                        "timeline_periods": len(timeline["items"]), "evidence": len(evidence),
+                        "timeline_periods": len(periods), "evidence": len(evidence),
                         "new_text_score": prediction["items"][0]["score"], "incremental": "skipped"})
     proof = {"status": "passed", "dataset": args.dataset, "entity": entity, "source": "hn_snapshot", "label_source": "dataset",
              "dataset_rows": len(expected), "label_sources": dataset["sources"], "labels": dataset["classes"],

@@ -214,7 +214,7 @@ app = FastAPI(title="Entity Sentiment Teacher", version="1.0.0", redoc_url=None,
               swagger_ui_parameters={"validatorUrl": None})
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok", "service": "teacher", "revision": SETTINGS["revision"],
             "model_loaded": ENGINE.runtime is not None}

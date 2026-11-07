@@ -478,7 +478,7 @@ def train_job(job_id):
             persist()
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 def health():
     source = weights_source(CONFIG)
     return {

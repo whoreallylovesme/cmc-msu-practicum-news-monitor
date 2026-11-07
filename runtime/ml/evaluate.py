@@ -110,7 +110,7 @@ def main():
         summary = call(args.url, f'/api/models/{model["id"]}/summary')
         predictions = {
             item["comment_id"]: item["probabilities"]
-            for item in all_items(args.url, "/api/evidence", {"entity": entity, "model_id": model["id"]})
+            for item in all_items(args.url, "/api/comments", {"entity": entity, "model_id": model["id"]})
         }
         if external:
             rows = list(external.values())

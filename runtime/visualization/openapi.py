@@ -5,6 +5,14 @@ SERVICES = (
     ("web_master", "Web Master"), ("visualization", "Visualization"), ("teacher", "Teacher"),
 )
 METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
+DESCRIPTIONS = {
+    "collector": "Источники, получение батча и журнал загрузок.",
+    "storage": "CRUD комментариев, сохранение оценок и разметки, агрегация данных.",
+    "ml": "Создание, обучение, проверка и применение модели; состояние задач.",
+    "web_master": "Пользовательские сценарии: загрузка → обучение → оценка → аналитика и отчёт. Здесь действует настроенная шкала баллов.",
+    "visualization": "Интерактивный дашборд доступен по адресу /. REST-маршрут проверяет его доступность.",
+    "teacher": "Метаданные учителя и разметка примеров. Опциональный сервис для обучения.",
+}
 
 
 def _rewrite(value, service):
@@ -31,7 +39,7 @@ def merge_schemas(schemas, unavailable=()):
         "info": {"title": "HN Monitor — all services", "version": "1.0.0",
                  "description": "HTTP contracts of all six microservices. Sign in with HTTP Basic. "
                  "Internal service requests require an administrator account."},
-        "tags": [{"name": title} for _, title in SERVICES],
+        "tags": [{"name": title, "description": DESCRIPTIONS[service]} for service, title in SERVICES],
         "paths": {},
         "components": {"securitySchemes": {"HTTPBasic": {"type": "http", "scheme": "basic"}}},
         "security": [{"HTTPBasic": []}],

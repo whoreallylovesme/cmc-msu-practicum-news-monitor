@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-import re
 from pathlib import Path
 
 import httpx
@@ -21,11 +19,6 @@ CONFIG = load_config(ROOT / "config.yaml", env_var="VISUALIZATION_CONFIG")
 LOGGER = logging.getLogger(__name__)
 MASTER = os.environ.get("MASTER_URL", CONFIG["master_url"]).rstrip("/")
 SCHEMA_SERVICES = ("web_master", "collector", "storage", "ml", "visualization", "teacher")
-GET_ROUTES = re.compile(
-    r"(session|config|status|loads|comments|models|timeline|analytics|evidence|report"
-    r"|models/[A-Za-z0-9_-]+/summary|jobs/[A-Za-z0-9_-]+)"
-)
-POST_ROUTES = re.compile(r"(import|models|models/[A-Za-z0-9_-]+/(train|validate|predict|score))")
 
 app = FastAPI(title="News Monitor Visualization")
 
@@ -106,21 +99,6 @@ async def service_request(service: str, path: str, request: Request):
     body = await request.body()
     result = await run_in_threadpool(gateway, request, "/services/" + service + "/" + path, body)
     return forward(result)
-
-
-@app.get("/api/{path:path}")
-def view_data(request: Request, path: str):
-    if not GET_ROUTES.fullmatch(path):
-        raise HTTPException(404, "Unknown dashboard operation")
-    return forward(gateway(request, "/api/" + path))
-
-
-@app.post("/api/{path:path}")
-def change_data(request: Request, path: str, body: dict = None):
-    if not POST_ROUTES.fullmatch(path):
-        raise HTTPException(404, "Unknown dashboard operation")
-    content = json.dumps(body).encode() if body is not None else None
-    return forward(gateway(request, "/api/" + path, content))
 
 
 dashboard = create_dashboard(MASTER, CONFIG["timeout_seconds"])

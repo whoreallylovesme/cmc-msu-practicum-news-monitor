@@ -62,7 +62,7 @@ def create_dashboard(master_url, timeout):
     def authenticate():
         try:
             result = httpx.get(
-                master_url + "/api/session",
+                master_url + "/api/config",
                 headers={"Authorization": request.headers.get("Authorization", "")},
                 timeout=timeout,
             )
@@ -315,7 +315,7 @@ def create_dashboard(master_url, timeout):
             hint += " Нажми на график, чтобы открыть комментарии за период." if active else " Обучи модель и оцени комментарии, чтобы увидеть тональность."
             return (timeline_figure(points, scale), summary(analytics["summary"]), hint,
                     model_metrics(model) if active else [],
-                    "/api/report?" + urlencode(params) if active else "", {} if active else {"display": "none"}, model,
+                    "/services/web_master/api/report?" + urlencode(params) if active else "", {} if active else {"display": "none"}, model,
                     {"entity": entity, "model_id": model_id if active else None, "bucket": bucket, "points": points},
                     source_breakdown(analytics["sources"]))
         except RuntimeError as error:
@@ -345,7 +345,7 @@ def create_dashboard(master_url, timeout):
                 first = date.fromisoformat(period)
                 end = first + timedelta(days=7 if data["bucket"] == "week" else 1)
                 params.update(from_date=period, to_date=end.isoformat())
-            result = master("evidence", params=params)
+            result = master("comments", params=params)
             label = "Период с " + period if period else "Последние оценки"
             return comments(result["items"]), count_caption(result), label, period
         except (RuntimeError, ValueError) as error:
@@ -357,8 +357,9 @@ def create_dashboard(master_url, timeout):
     )
     def service_status(_refresh, _ticks):
         try:
-            services = master("status")["services"]
-            history = master("loads", params={"limit": 5})["items"]
+            state = master("status")
+            services = state["services"]
+            history = state["loads"][:5]
             status = [html.Span(
                 name + " · " + ("OK" if row["status"] in {"ok", "healthy", "ready"} else "недоступен"),
                 className="badge " + ("ok" if row["status"] in {"ok", "healthy", "ready"} else "bad"),

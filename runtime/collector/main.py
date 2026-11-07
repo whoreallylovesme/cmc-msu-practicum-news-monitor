@@ -105,7 +105,7 @@ JOURNAL = LoadJournal(DATA_DIR / "loads.jsonl")
 app = FastAPI(title="Hacker News Collector", version="1.0.0")
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok", "service": "collector"}
 
