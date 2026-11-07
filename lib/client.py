@@ -50,7 +50,7 @@ def monitoring_options(base, *, entity=None, source=None, teacher=None):
     monitoring = call(base, "/api/config")["monitoring"] if entity is None or source is None else {}
     selected_entity = monitoring["query"] if entity is None else entity
     selected_source = monitoring["source"] if source is None else source
-    selected_teacher = teacher or {"hn_snapshot": "dataset", "archive": "fixture"}.get(selected_source, "reviewed")
+    selected_teacher = teacher or ("dataset" if selected_source == "hn_snapshot" else "reviewed")
     return selected_entity, selected_source, selected_teacher
 
 
@@ -59,8 +59,7 @@ def train_model(base, entity, teacher, kind, limit, timeout):
     model_id = model["id"]
     job = call(base, f"/api/models/{model_id}/train", body={"teacher": teacher, "limit": limit})
     result = wait_job(base, job["job_id"], timeout)
-    if result["status"] != "succeeded":
-        raise RuntimeError(f"Expected a trained model: {result}")
+    assert result["status"] == "succeeded", f"Expected a trained model: {result}"
     return call(base, f"/api/models/{model_id}/summary")
 
 
@@ -76,14 +75,13 @@ def wait_job(base, job_id, timeout):
     raise RuntimeError(f"Training did not finish: {job_id}")
 
 
-def require_status(base, expected, path, **kwargs):
+def assert_status(base, expected, path, **kwargs):
+    status = None
     try:
         call(base, path, **kwargs)
     except HTTPError as error:
-        if error.code == expected:
-            return
-        raise
-    raise RuntimeError(f"{path} was expected to return HTTP {expected}")
+        status = error.code
+    assert status == expected, f"{path}: expected HTTP {expected}, received {status or 'success'}"
 
 
 def all_items(base, path, params):

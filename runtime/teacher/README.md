@@ -26,17 +26,26 @@ from `dataset`; it does not request new neural labels. Teacher Swagger is at
 [localhost:8082/docs](http://127.0.0.1:8082/docs). `MONITOR_TEACHER_PORT`
 changes the published loopback port; ML uses `http://teacher:8000` internally.
 
+The image build installs runtime dependencies without downloading the roughly
+1.75 GB of configured model/tokenizer assets. `/health`, `/metadata` and `/docs`
+start without the NN. The first in-scope `POST /label` downloads and verifies
+the assets in the persistent `teacher-encoder-weights` volume. To prefetch them
+explicitly after starting Teacher:
+
+```sh
+docker compose --profile training exec teacher python prepare.py
+```
+
 To use Teacher, create a model with `POST /api/models` in the main Swagger,
 then call `POST /api/models/{id}/train` with
 `{"teacher": "service", "mode": "from_scratch", "limit": 100}`.
 Poll `GET /api/jobs/{id}` for the result. The chosen entity must have imported
 comments from at least two threads.
 
-For a native run, prepare its cache and add the optional process:
+For a native run, select a writable cache and add the optional process:
 
 ```sh
 export TEACHER_ENCODER_CACHE_DIR="$PWD/.local-data/teacher/encoder-weights"
-python runtime/teacher/prepare.py
 python demo/run.py --with-teacher
 ```
 
@@ -101,10 +110,12 @@ Templates can reference `{entity}`, `{text}`, `{story_title}`, `{parent_text}`
 and their `{title}`/`{parent}` aliases. The default NLI tone uses only the current
 comment; parent/title content is used by the mention gate.
 
-The Dockerfile prepares and verifies assets at build time, makes its cache
-readable/writable by UID 10001, and runs without root. Cached files are named by
+The Dockerfile creates a writable cache owned by UID/GID 10001 and runs without
+root. Compose preserves downloaded assets in `teacher-encoder-weights`.
+Cached files are named by
 SHA-256, verified before use, and atomically installed by
 `lib/model_assets.py`. `TEACHER_ENCODER_CACHE_DIR` selects the deployment cache;
 `prepare.py --cache-dir` can override it for prefetching. No runtime network is
 needed once those assets are present. After replacing pinned weights in YAML,
-prepare the matching assets or rebuild the teacher image before an offline run.
+prefetch the matching assets before an offline run. Native prefetching uses
+`python runtime/teacher/prepare.py` with the same cache environment variable.

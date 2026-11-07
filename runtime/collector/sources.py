@@ -18,14 +18,6 @@ from urllib.request import Request, urlopen
 from lib.news import News, NewsComment, NewsProvider
 
 
-class InvalidCursor(ValueError):
-    """The cursor is invalid for the requested collection scope."""
-
-
-class SourceUnavailable(RuntimeError):
-    """Hacker News could not return a usable response."""
-
-
 class TextExtractor(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -74,11 +66,11 @@ def decode_cursor(cursor, scope, keys):
         padding = "=" * (-len(cursor) % 4)
         value = json.loads(base64.b64decode(cursor + padding, altchars=b"-_", validate=True))
     except (ValueError, TypeError, UnicodeError, binascii.Error) as exc:
-        raise InvalidCursor("Malformed continuation cursor") from exc
+        raise ValueError("Malformed continuation cursor") from exc
     if not isinstance(value, dict) or value.pop("scope", None) != scope:
-        raise InvalidCursor("Cursor belongs to another source or topic")
+        raise ValueError("Cursor belongs to another source or topic")
     if set(value) != set(keys) or any(type(value[key]) is not int or value[key] < 0 for key in keys):
-        raise InvalidCursor("Malformed cursor state")
+        raise ValueError("Malformed cursor state")
     return value
 
 
@@ -173,17 +165,17 @@ class HackerNewsSource(NewsProvider):
             with urlopen(request, timeout=self.timeout) as response:
                 body = response.read(self.max_response_bytes + 1)
             if len(body) > self.max_response_bytes:
-                raise SourceUnavailable("Hacker News response exceeded the size limit")
+                raise RuntimeError("Hacker News response exceeded the size limit")
             data = json.loads(body)
             if not isinstance(data, dict):
-                raise SourceUnavailable("Hacker News returned an invalid response")
+                raise RuntimeError("Hacker News returned an invalid response")
             return data
         except HTTPError as exc:
             if exc.code == 404 and path.startswith("/items/"):
                 return {}
-            raise SourceUnavailable(f"Hacker News returned HTTP {exc.code}") from exc
+            raise RuntimeError(f"Hacker News returned HTTP {exc.code}") from exc
         except (URLError, TimeoutError, OSError, ValueError) as exc:
-            raise SourceUnavailable("Hacker News API request failed") from exc
+            raise RuntimeError("Hacker News API request failed") from exc
 
     def batch(self, terms, cursor, limit):
         scope = cursor_scope(self.name, terms)
@@ -192,7 +184,7 @@ class HackerNewsSource(NewsProvider):
             until=int(time.time()), alias=0, page=0, hit=0, comment=0,
         )
         if state["until"] > int(time.time()) + 1 or state["alias"] > len(terms):
-            raise InvalidCursor("Invalid Hacker News cursor position")
+            raise ValueError("Invalid Hacker News cursor position")
         patterns = topic_patterns(terms)
         items = []
         count = 0
@@ -210,11 +202,11 @@ class HackerNewsSource(NewsProvider):
             hits = search.get("hits")
             pages = search.get("nbPages")
             if not isinstance(hits, list) or type(pages) is not int:
-                raise SourceUnavailable("Hacker News search returned an invalid page")
+                raise RuntimeError("Hacker News search returned an invalid page")
             while state["hit"] < len(hits) and count < limit and requests_left > 0:
                 hit = hits[state["hit"]]
                 if not isinstance(hit, dict):
-                    raise SourceUnavailable("Hacker News search returned an invalid story")
+                    raise RuntimeError("Hacker News search returned an invalid story")
                 title = clean_text(hit.get("title"))
                 first_alias = next((i for i, pattern in enumerate(patterns) if pattern.search(title)), None)
                 story_id = str(hit.get("objectID", ""))
@@ -269,14 +261,14 @@ def thread_comments(story, story_id, cutoff):
     """Flatten nested replies, preserving each immediate parent and a fixed time window."""
     root_children = story.get("children") or []
     if not isinstance(root_children, list):
-        raise SourceUnavailable("Hacker News thread returned invalid replies")
+        raise RuntimeError("Hacker News thread returned invalid replies")
     pending = [(child, story_id, None) for child in reversed(root_children)]
     items = []
     seen = set()
     while pending:
         node, parent_id, parent_text = pending.pop()
         if not isinstance(node, dict):
-            raise SourceUnavailable("Hacker News thread returned an invalid comment")
+            raise RuntimeError("Hacker News thread returned an invalid comment")
         comment_id = str(node.get("id", ""))
         if not comment_id.isdecimal() or comment_id in seen:
             continue
@@ -291,6 +283,6 @@ def thread_comments(story, story_id, cutoff):
             ))
         children = node.get("children") or []
         if not isinstance(children, list):
-            raise SourceUnavailable("Hacker News comment returned invalid replies")
+            raise RuntimeError("Hacker News comment returned invalid replies")
         pending.extend((child, comment_id, text or None) for child in reversed(children))
     return sorted(items, key=lambda item: (item.date, int(item.id)), reverse=True)

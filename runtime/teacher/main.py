@@ -18,7 +18,7 @@ import yaml
 from fastapi import FastAPI, HTTPException
 
 from lib.mentions import MentionMatcher
-from lib.model_assets import ModelAssetError, asset_spec, ensure_asset
+from lib.model_assets import asset_spec, ensure_asset
 from lib.sentiment import CHOICES
 from lib.teacher_contracts import INPUT_HASH_VERSION, TeacherRequest, TeacherResponse, input_hash
 
@@ -113,7 +113,7 @@ def prepare_assets(settings, cache_dir=None):
 def _softmax(values):
     values = np.asarray(values, dtype=np.float64)
     if values.ndim != 1 or not np.isfinite(values).all():
-        raise ModelAssetError("Teacher returned invalid class logits")
+        raise ValueError("Teacher returned invalid class logits")
     probabilities = np.exp(values - values.max())
     return probabilities / probabilities.sum()
 
@@ -141,7 +141,7 @@ class TeacherRuntime:
                                                    providers=["CPUExecutionProvider"])
         self.inputs = {item.name for item in self.session.get_inputs()}
         if not self.inputs <= {"input_ids", "attention_mask", "token_type_ids"}:
-            raise ModelAssetError("Configured teacher model requires unsupported ONNX inputs")
+            raise ValueError("Configured teacher model requires unsupported ONNX inputs")
 
     def distribution(self, entity, item):
         protocol = self.settings["protocol"]
@@ -159,15 +159,15 @@ class TeacherRuntime:
                       "token_type_ids": np.asarray([row.type_ids for row in encoded], dtype=np.int64)}
         logits = np.asarray(self.session.run(None, {name: candidates[name] for name in self.inputs})[0])
         if logits.ndim != 2 or not np.isfinite(logits).all():
-            raise ModelAssetError("Teacher must produce finite sequence-classification logits")
+            raise ValueError("Teacher must produce finite sequence-classification logits")
         if self.settings["backend"] == "nli":
             index = adapter["entailment_index"]
             if logits.shape[0] != 3 or logits.shape[1] <= index:
-                raise ModelAssetError("Teacher NLI output does not match the configured entailment index")
+                raise ValueError("Teacher NLI output does not match the configured entailment index")
             probabilities = _softmax(logits[:, index])
         else:
             if logits.shape != (1, len(protocol["class_mapping"])):
-                raise ModelAssetError("Teacher output classes do not match class_mapping")
+                raise ValueError("Teacher output classes do not match class_mapping")
             probabilities = _softmax(logits[0])
         result = np.zeros(len(CHOICES), dtype=np.float64)
         for probability, name in zip(probabilities, protocol["class_mapping"]):

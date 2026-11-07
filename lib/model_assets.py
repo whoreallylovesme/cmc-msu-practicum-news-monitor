@@ -12,10 +12,6 @@ from typing import Optional
 import requests
 
 
-class ModelAssetError(RuntimeError):
-    pass
-
-
 @dataclass(frozen=True)
 class AssetSpec:
     path: str
@@ -102,7 +98,7 @@ def ensure_asset(spec, cache_dir, *, suffix=".bin", timeout=180):
                         continue
                     count += len(chunk)
                     if count > spec.max_bytes or (spec.size_bytes is not None and count > spec.size_bytes):
-                        raise ModelAssetError("Model asset exceeds its pinned or maximum byte size")
+                        raise ValueError("Model asset exceeds its pinned or maximum byte size")
                     digest.update(chunk)
                     handle.write(chunk)
 
@@ -119,14 +115,10 @@ def ensure_asset(spec, cache_dir, *, suffix=".bin", timeout=180):
                 os.fsync(handle.fileno())
             if (count == 0 or digest.hexdigest() != spec.sha256
                     or (spec.size_bytes is not None and count != spec.size_bytes)):
-                raise ModelAssetError("Model asset failed SHA-256 or byte-size verification")
+                raise ValueError("Model asset failed SHA-256 or byte-size verification")
             temporary.chmod(0o644)
             os.replace(temporary, destination)
             return destination
-    except ModelAssetError:
-        raise
-    except (OSError, requests.RequestException) as error:
-        raise ModelAssetError("Could not install the configured model asset") from error
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)

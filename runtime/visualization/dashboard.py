@@ -1,6 +1,7 @@
 """Plotly Dash interface with server-side callbacks to Web Master."""
 
 import json
+import logging
 from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
@@ -17,21 +18,18 @@ ACCENT = "#9f3919"
 SOURCES = {
     "hn_snapshot": "Hacker News · снимок",
     "hacker_news": "Hacker News · живой",
-    "archive": "Синтетический набор",
 }
-TEACHERS = {"hn_snapshot": "dataset", "hacker_news": "reviewed", "archive": "fixture"}
+TEACHERS = {"hn_snapshot": "dataset", "hacker_news": "reviewed"}
 TEACHER_LABELS = {
     "dataset": "Готовая разметка датасета",
     "reviewed": "Проверенная разметка",
     "service": "Отдельный сервис учителя",
     "snapshot": "Метки экспериментального учителя",
-    "fixture": "Синтетические метки",
     "live": "Модель через llama.cpp",
 }
 
 
-class MasterError(RuntimeError):
-    pass
+LOGGER = logging.getLogger(__name__)
 
 
 def create_dashboard(master_url, timeout):
@@ -43,14 +41,16 @@ def create_dashboard(master_url, timeout):
                 json=body, params=params, timeout=timeout,
             )
         except httpx.RequestError as error:
-            raise MasterError("Web Master недоступен. Проверь состояние сервисов.") from error
+            LOGGER.exception("Web Master request failed")
+            raise RuntimeError("Web Master недоступен. Проверь состояние сервисов.") from error
         try:
             data = result.json()
         except ValueError as error:
-            raise MasterError("Web Master вернул некорректный ответ.") from error
+            LOGGER.exception("Web Master response is not JSON")
+            raise RuntimeError("Web Master вернул некорректный ответ.") from error
         if result.is_error:
             detail = data.get("detail", "Не удалось выполнить запрос.")
-            raise MasterError(detail if isinstance(detail, str) else json.dumps(detail, ensure_ascii=False))
+            raise RuntimeError(detail if isinstance(detail, str) else json.dumps(detail, ensure_ascii=False))
         return data
 
     dashboard = Dash(
@@ -87,7 +87,7 @@ def create_dashboard(master_url, timeout):
             role = getattr(g, "monitor_role", "viewer")
             try:
                 config = master("config")
-            except MasterError as failure:
+            except RuntimeError as failure:
                 error = str(failure)
         source = config["monitoring"].get("source")
         entity = config["monitoring"].get("query")
@@ -147,7 +147,6 @@ def create_dashboard(master_url, timeout):
                         {"label": TEACHER_LABELS["reviewed"], "value": "reviewed"},
                         {"label": TEACHER_LABELS["service"], "value": "service"},
                         {"label": TEACHER_LABELS["snapshot"], "value": "snapshot"},
-                        {"label": "Синтетические метки", "value": "fixture"},
                     ] + ([] if config.get("offline_demo") else [{"label": "Модель через llama.cpp", "value": "live"}]),
                         value=TEACHERS.get(source, "dataset"), clearable=False)),
                     control("Режим", dcc.Dropdown(id="mode", options=[
@@ -213,7 +212,7 @@ def create_dashboard(master_url, timeout):
             return [], None
         try:
             rows = master("models", params={"entity": entity})["items"]
-        except MasterError:
+        except RuntimeError:
             return [], None
         options = [{"label": f'{row["kind"]} · {row["id"][:8]}' + (f' · v{row["version"]}' if row.get("version") else ""),
                     "value": row["id"]} for row in rows]
@@ -274,7 +273,7 @@ def create_dashboard(master_url, timeout):
                 return [message, "notice", no_update, (refresh or 0) + 1,
                         no_update, None, True, label]
             if not model_id:
-                raise MasterError("Сначала создай модель.")
+                raise RuntimeError("Сначала создай модель.")
             if trigger == "train":
                 started = master(f"models/{model_id}/train", method="POST", body={
                     "teacher": teacher, "mode": mode, "limit": 10000 if teacher == "dataset" else 3000,
@@ -285,7 +284,7 @@ def create_dashboard(master_url, timeout):
                 result = master(f"models/{model_id}/score", method="POST", body={"entity": entity, "limit": 10000})
                 return [f'Версия {result["version"]} оценила {result["processed"]} комментариев.', "notice",
                         no_update, (refresh or 0) + 1, no_update, no_update, no_update, no_update]
-        except MasterError as error:
+        except RuntimeError as error:
             return [str(error), "notice error", *unchanged[2:]]
         return unchanged
 
@@ -319,7 +318,7 @@ def create_dashboard(master_url, timeout):
                     "/api/report?" + urlencode(params) if active else "", {} if active else {"display": "none"}, model,
                     {"entity": entity, "model_id": model_id if active else None, "bucket": bucket, "points": points},
                     source_breakdown(analytics["sources"]))
-        except MasterError as error:
+        except RuntimeError as error:
             return empty_figure(str(error)), [], str(error), [], "", {"display": "none"}, None, {}, []
 
     @dashboard.callback(
@@ -349,7 +348,7 @@ def create_dashboard(master_url, timeout):
             result = master("evidence", params=params)
             label = "Период с " + period if period else "Последние оценки"
             return comments(result["items"]), count_caption(result), label, period
-        except (MasterError, ValueError) as error:
+        except (RuntimeError, ValueError) as error:
             return [html.P(str(error), className="notice error")], "", "", previous
 
     @dashboard.callback(
@@ -367,7 +366,7 @@ def create_dashboard(master_url, timeout):
             loads = [html.P(" · ".join(str(row.get(key, "")) for key in ("timestamp", "entity", "source", "status")),
                             className="metadata") for row in history]
             return status, loads or [html.P("Загрузок пока нет.", className="subtle")]
-        except MasterError as error:
+        except RuntimeError as error:
             return [html.P(str(error), className="notice error")], []
 
     return dashboard
@@ -470,7 +469,7 @@ def model_metrics(model):
               html.Dt("Разметка"), html.Dd(TEACHER_LABELS.get(model.get("teacher"), model.get("teacher") or "—")),
               html.Dt("Проверочных комментариев"), html.Dd(str(holdout.get("items", "—")))]
     if "class_agreement" in fidelity:
-        label = "Совпадение с разметкой" if model.get("teacher") == "reviewed" else "Совпадение с учителем"
+        label = "Совпадение с разметкой" if model.get("teacher") in {"dataset", "reviewed"} else "Совпадение с учителем"
         values.extend([html.Dt(label), html.Dd(f'{fidelity["class_agreement"]:.1%}')])
     reference = metrics.get("assistant_reference") or {}
     quality = reference.get("student") or holdout.get("assistant_reviewed") or {}
@@ -495,6 +494,8 @@ def model_metrics(model):
                 f'{quality["unscored_relevant_items"]} отклонены моделью. MAE считается по полученным баллам.',
                 className="subtle",
             ))
+    elif model.get("teacher") == "dataset":
+        result.append(html.P("Согласие с готовыми метками датасета; это не независимая оценка точности человеком.", className="subtle"))
     elif model.get("teacher") == "reviewed":
         result.append(html.P("Обучение на проверенной ассистентом разметке. Новые комментарии участвуют в обучении после разметки.", className="subtle"))
     if holdout.get("quality_status") == "unavailable":

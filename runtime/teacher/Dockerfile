@@ -15,9 +15,8 @@ COPY runtime/teacher/requirements.txt ./requirements.txt
 RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
 COPY runtime/teacher ./runtime/teacher
-RUN python runtime/teacher/prepare.py \
-    && chown -R 10001:10001 /opt/news-teacher-models \
-    && chmod -R a+rX /opt/news-teacher-models
+RUN mkdir -p /opt/news-teacher-models \
+    && chown 10001:10001 /opt/news-teacher-models
 USER 10001:10001
 WORKDIR /app/runtime/teacher
 

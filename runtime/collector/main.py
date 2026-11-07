@@ -17,7 +17,7 @@ from lib.config import load_config, load_project_config
 from lib.contracts import Comment, ProviderName
 from lib.news import NewsProvider, comments_as_dto
 
-from sources import ArchiveSource, HackerNewsSource, InvalidCursor, SourceUnavailable, aliases_for
+from sources import ArchiveSource, HackerNewsSource, aliases_for
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -31,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 class BatchRequest(BaseModel):
     entity: str = Field(min_length=1, max_length=100)
     aliases: List[str] = Field(default_factory=list, max_length=10)
-    source: ProviderName = "archive"
+    source: ProviderName = "hn_snapshot"
     cursor: Optional[str] = Field(default=None, max_length=512)
     limit: int = Field(default=50, ge=1, le=200)
 
@@ -96,10 +96,6 @@ def register_provider(provider: NewsProvider):
 
 
 register_provider(ArchiveSource(
-    CONFIG_PATH.parent / CONFIG["fixture_path"],
-    description="Synthetic Hacker News-style discussions for reproducible demos",
-))
-register_provider(ArchiveSource(
     Path(PROJECT["path_to_offline_demo_data"]),
     name="hn_snapshot", description="Saved Hacker News discussions for offline replay",
     chronological=True,
@@ -154,10 +150,12 @@ def get_batch(request: BatchRequest):
         items = comments_as_dto(news)
         entry.update(status="ok", returned=len(items), has_more=next_cursor is not None)
         return {"items": items, "next_cursor": next_cursor, "source": request.source}
-    except InvalidCursor as exc:
+    except ValueError as exc:
+        LOGGER.warning("Invalid Collector request: %s", exc)
         entry.update(status="error", error=str(exc))
         raise HTTPException(400, str(exc)) from exc
-    except SourceUnavailable as exc:
+    except RuntimeError as exc:
+        LOGGER.exception("Collector source failed")
         entry.update(status="error", error=str(exc))
         raise HTTPException(502, str(exc)) from exc
     finally:

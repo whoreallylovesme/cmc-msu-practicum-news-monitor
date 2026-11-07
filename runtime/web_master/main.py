@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import secrets
@@ -20,6 +21,7 @@ from lib.sentiment import SCORE_MAX as MODEL_SCORE_MAX, SCORE_MIN as MODEL_SCORE
 
 
 CONFIG = load_config(Path(__file__).with_name("config.yaml"), env_var="MASTER_CONFIG")
+LOGGER = logging.getLogger(__name__)
 TEMPLATES = Environment(
     loader=FileSystemLoader(Path(__file__).with_name("templates")),
     autoescape=select_autoescape(["html", "xml"]),
@@ -28,6 +30,8 @@ UPSTREAMS = {
     service: os.environ.get(f"{service.upper()}_URL", url).rstrip("/")
     for service, url in CONFIG["services"].items()
 }
+TEACHER_URL = os.environ.get("TEACHER_URL", CONFIG["teacher_url"]).rstrip("/")
+SCHEMA_SERVICES = ("web_master", "collector", "storage", "ml", "visualization", "teacher")
 CREDENTIALS = {
     role: (
         os.environ.get(f"MONITOR_{role.upper()}_USER", values["username"]),
@@ -208,6 +212,26 @@ class Timeline(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "web_master"}
+
+
+@app.get("/openapi/{service}.json", include_in_schema=False)
+def service_schema(service: str):
+    if service not in SCHEMA_SERVICES:
+        raise HTTPException(404, "Unknown service")
+    if service == "web_master":
+        return app.openapi()
+    base_url = TEACHER_URL if service == "teacher" else UPSTREAMS[service]
+    try:
+        response = httpx.get(base_url + "/openapi.json", timeout=CONFIG["timeouts"]["default"])
+        response.raise_for_status()
+        schema = response.json()
+        if (not isinstance(schema, dict) or not isinstance(schema.get("openapi"), str)
+                or not isinstance(schema.get("info"), dict) or not isinstance(schema.get("paths"), dict)):
+            raise ValueError("Invalid OpenAPI schema")
+    except (httpx.HTTPError, ValueError) as error:
+        LOGGER.exception("Could not load the OpenAPI schema for %s", service)
+        raise HTTPException(502, f"{service} API schema is unavailable") from error
+    return schema
 
 
 @app.get("/api/session", tags=["System"])

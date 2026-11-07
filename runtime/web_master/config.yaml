@@ -3,6 +3,7 @@ services:
   storage: http://storage:8000
   ml: http://ml:8000
   visualization: http://visualization:8000
+teacher_url: http://teacher:8000
 timeouts:
   default: 8
   collector: 120

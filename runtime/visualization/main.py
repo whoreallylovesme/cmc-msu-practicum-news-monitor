@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from starlette.middleware.wsgi import WSGIMiddleware
 
 from lib.config import load_config
@@ -16,6 +16,7 @@ from dashboard import create_dashboard
 ROOT = Path(__file__).resolve().parent
 CONFIG = load_config(ROOT / "config.yaml", env_var="VISUALIZATION_CONFIG")
 MASTER = os.environ.get("MASTER_URL", CONFIG["master_url"]).rstrip("/")
+SCHEMA_SERVICES = ("web_master", "collector", "storage", "ml", "visualization", "teacher")
 GET_ROUTES = re.compile(
     r"(session|config|status|loads|comments|models|timeline|analytics|evidence|report"
     r"|models/[A-Za-z0-9_-]+/summary|jobs/[A-Za-z0-9_-]+)"
@@ -62,23 +63,36 @@ def health():
 
 
 @app.get("/gateway-docs", include_in_schema=False)
-def gateway_docs(request: Request):
-    result = gateway(request, "/api/session")
-    if result.is_error:
-        return forward(result)
+def gateway_docs(service: str = "web_master"):
+    if service not in SCHEMA_SERVICES:
+        raise HTTPException(404, "Unknown service")
+    parameters = {"validatorUrl": None}
+    if service != "web_master":
+        parameters["supportedSubmitMethods"] = []
     return get_swagger_ui_html(
-        openapi_url="/gateway-openapi.json",
-        title="HN Monitor API",
-        swagger_ui_parameters={"validatorUrl": None},
+        openapi_url="/gateway-openapi.json?service=" + service,
+        title="HN Monitor API: " + service,
+        swagger_ui_parameters=parameters,
     )
 
 
 @app.get("/gateway-openapi.json", include_in_schema=False)
-def gateway_schema(request: Request):
-    result = gateway(request, "/api/session")
+def gateway_schema(request: Request, service: str = "web_master"):
+    if service not in SCHEMA_SERVICES:
+        raise HTTPException(404, "Unknown service")
+    result = gateway(request, "/openapi/" + service + ".json")
     if result.is_error:
         return forward(result)
-    return forward(gateway(request, "/openapi.json"))
+    schema = result.json()
+    info = schema["info"]
+    navigation = "API schemas: " + " · ".join(
+        f"[{name}](/gateway-docs?service={name})" for name in SCHEMA_SERVICES
+    )
+    description = info.get("description", "")
+    if service != "web_master":
+        description += "\n\nInternal service API, read-only in Swagger; request execution is disabled."
+    info["description"] = (description + "\n\n" + navigation).strip()
+    return JSONResponse(schema, headers={"cache-control": "no-store"})
 
 
 @app.get("/api/{path:path}")

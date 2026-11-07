@@ -51,6 +51,7 @@ def main():
     common.setdefault("ML_ENCODER_CACHE_DIR", str(args.data_dir.resolve() / "ml" / "encoder-weights"))
     if args.with_teacher:
         common["TEACHER_SERVICE_URL"] = urls["teacher"]
+        common["TEACHER_URL"] = urls["teacher"]
         common.setdefault("TEACHER_ENCODER_CACHE_DIR", str(args.data_dir.resolve() / "teacher" / "encoder-weights"))
     common.setdefault("OMP_NUM_THREADS", "2")
     common.setdefault("OPENBLAS_NUM_THREADS", "2")

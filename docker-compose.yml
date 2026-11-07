@@ -14,6 +14,7 @@ services:
       TEACHER_ENCODER_CACHE_DIR: /opt/news-teacher-models
     volumes:
       - ./runtime/teacher/config.yaml:/app/runtime/teacher/config.yaml:ro
+      - teacher-encoder-weights:/opt/news-teacher-models
     ports:
       - "127.0.0.1:${MONITOR_TEACHER_PORT:-8082}:8000"
     healthcheck: *health
@@ -102,3 +103,4 @@ volumes:
   ml-data:
   teacher-models:
   student-weights:
+  teacher-encoder-weights:
