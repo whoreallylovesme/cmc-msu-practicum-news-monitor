@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from lib.client import all_items, assert_status, call, monitoring_options, train_model, wait_job, wait_ready
+from lib.cli import configure_logging, write_json
 from lib.mentions import MentionMatcher
 
 
@@ -215,12 +216,12 @@ def main(argv=None):
              "reference_kind": "prelabelled silver dataset; not independent human gold",
              "imported": received, "import_batches": batches, "unique_stored_ids": len(set(ids)),
              "anonymous_HTTP": 401, "viewer_write_HTTP": 403, "models": results}
-    print(json.dumps(proof, ensure_ascii=False, indent=2))
+    write_json(proof)
     return proof
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    configure_logging()
     try:
         main()
     except Exception:

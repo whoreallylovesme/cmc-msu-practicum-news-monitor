@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -9,6 +10,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from lib.cli import configure_logging
+
+
+LOGGER = logging.getLogger(__name__)
 PROJECT_PREFIX = "hn-monitor-demo"
 
 
@@ -34,28 +41,29 @@ def main():
         for name in ("MONITOR_ADMIN_USER", "MONITOR_ADMIN_PASSWORD", "MONITOR_VIEWER_USER", "MONITOR_VIEWER_PASSWORD"):
             environment[name] = services["web_master"]["environment"][name]
         subprocess.run([*compose, "up", "--build", "--wait"], cwd=ROOT, env=environment, check=True)
-        print(f"UI: http://127.0.0.1:{ui_port}/", flush=True)
-        print(f"Swagger API: http://127.0.0.1:{ui_port}/gateway-docs", flush=True)
+        LOGGER.info("UI: http://127.0.0.1:%s/", ui_port)
+        LOGGER.info("Swagger API: http://127.0.0.1:%s/gateway-docs", ui_port)
         if teacher_port is not None:
-            print(f"Teacher Swagger: http://127.0.0.1:{teacher_port}/docs", flush=True)
+            LOGGER.info("Teacher Swagger: http://127.0.0.1:%s/docs", teacher_port)
         subprocess.run(
             [sys.executable, str(ROOT / "demo/e2e.py"), "--url", f"http://127.0.0.1:{api_port}", "--dataset", args.dataset],
             cwd=ROOT, env=environment, check=True,
         )
-        print(f"Demo is running. From the project root, stop it with: docker compose -p {project} down", flush=True)
+        LOGGER.info("Demo is running. From the project root, stop it with: docker compose -p %s down", project)
         return 0
     except FileNotFoundError as error:
-        print(f"Could not start the demo command: {error}", file=sys.stderr)
+        LOGGER.error("Could not start the demo command: %s", error)
         return 127
     except subprocess.CalledProcessError as error:
         if error.stderr:
-            print(error.stderr, file=sys.stderr)
-        print(f"Demo command failed with status {error.returncode}. Containers were left available for inspection.", file=sys.stderr)
+            LOGGER.error("%s", error.stderr.rstrip())
+        LOGGER.error("Demo command failed with status %s. Containers were left available for inspection.", error.returncode)
         return error.returncode or 1
     except KeyboardInterrupt:
-        print("Demo interrupted. Containers were left running.", file=sys.stderr)
+        LOGGER.info("Demo interrupted. Containers were left running.")
         return 130
 
 
 if __name__ == "__main__":
+    configure_logging()
     sys.exit(main())

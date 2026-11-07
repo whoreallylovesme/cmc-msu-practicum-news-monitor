@@ -34,12 +34,15 @@ jobs:
         run: |
           docker compose exec -T ml python - <<'PY'
           from pathlib import Path
+          import logging
+          from lib.cli import configure_logging
+          configure_logging()
           roots = [Path("/models"), Path("/opt/news-models")]
           weights = [str(path) for root in roots if root.exists() for path in root.rglob("*")
                      if path.is_file() and path.suffix.lower() in {".onnx", ".gguf"}]
           if weights:
               raise SystemExit(f"Unexpected NN weights in the default demo cache: {weights}")
-          print("Default dataset demo used no ONNX/GGUF cache files")
+          logging.getLogger("ci").info("Default dataset demo used no ONNX/GGUF cache files")
           PY
       - name: Print logs on failure
         if: failure()

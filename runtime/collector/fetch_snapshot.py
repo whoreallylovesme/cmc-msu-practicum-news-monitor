@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import logging
 import re
 import sys
 from dataclasses import replace
@@ -13,12 +14,14 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from lib.config import load_config, load_monitoring
+from lib.cli import configure_logging
 from lib.news import comments_as_dto
 
 from sources import HackerNewsSource, aliases_for, clean_text, hacker_news_story, topic_patterns
 
 
 HERE = Path(__file__).resolve().parent
+LOGGER = logging.getLogger(__name__)
 START = datetime(2026, 7, 9, tzinfo=timezone.utc)
 WINDOWS = 4
 WINDOW_DAYS = 30
@@ -99,7 +102,7 @@ def fetch(query, aliases=()):
                 break
         if len(window) != STORIES_PER_WINDOW:
             raise RuntimeError(f"Only {len(window)} threads met the sampling rules in window {window_start.date()}")
-        print(f"Selected {len(window)} threads from {window_start.date()} to {window_end.date()}", flush=True)
+        LOGGER.info("Selected %s threads from %s to %s", len(window), window_start.date(), window_end.date())
         selected.extend(window)
     return selected, end
 
@@ -170,7 +173,7 @@ def fetch_quality_audit(query, evaluation_stories, aliases=(), excluded_comment_
             "url": chosen.url,
             "comments": comments_as_dto([chosen]),
         })
-        print(f"Selected {len(sample)} fresh audit comments in thread {story_id}", flush=True)
+        LOGGER.info("Selected %s fresh audit comments in thread %s", len(sample), story_id)
     return selected
 
 
@@ -278,7 +281,7 @@ def fetch_training(query, aliases=(), excluded_story_ids=()):
                 "choose a query with enough history or use --small-demo"
             )
         selected.extend(window)
-        print(f"Selected {len(window)} training threads in {month_start:%Y-%m}", flush=True)
+        LOGGER.info("Selected %s training threads in %s", len(window), month_start.strftime("%Y-%m"))
         month_start = month_end
     return selected
 
@@ -355,8 +358,9 @@ def main():
     args.output.write_text(data, encoding="utf-8")
     metadata = args.output.with_suffix(".metadata.json")
     metadata.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote {len(items)} comments from {len(stories)} threads to {args.output}")
+    LOGGER.info("Wrote %s comments from %s threads to %s", len(items), len(stories), args.output)
 
 
 if __name__ == "__main__":
+    configure_logging()
     main()

@@ -1,5 +1,6 @@
 """Run the five HTTP services and an optional independent teacher."""
 import argparse
+import logging
 import os
 import signal
 import subprocess
@@ -9,6 +10,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from lib.cli import configure_logging
+
+
+LOGGER = logging.getLogger(__name__)
 SERVICES = ("collector", "storage", "ml", "web_master", "visualization")
 
 
@@ -66,7 +73,7 @@ def main():
                 cwd=ROOT / "runtime" / service,
                 env={**common, "MONITOR_DATA_DIR": str(service_data)},
             )
-            print(f"{service}: {urls[service]}", flush=True)
+            LOGGER.info("%s: %s", service, urls[service])
 
         while True:
             for service, process in processes.items():
@@ -75,14 +82,10 @@ def main():
                     continue
                 if service == "teacher":
                     if not teacher_exit_reported:
-                        print(
-                            f"Optional teacher exited with status {returncode}; "
-                            "the five main services will keep running.",
-                            file=sys.stderr, flush=True,
-                        )
+                        LOGGER.warning("Optional teacher exited with status %s; the five main services will keep running.", returncode)
                         teacher_exit_reported = True
                     continue
-                print(f"{service} exited with status {returncode}", file=sys.stderr)
+                LOGGER.error("%s exited with status %s", service, returncode)
                 return returncode or 1
             time.sleep(0.25)
     except KeyboardInterrupt:
@@ -100,4 +103,5 @@ def main():
 
 
 if __name__ == "__main__":
+    configure_logging()
     sys.exit(main())

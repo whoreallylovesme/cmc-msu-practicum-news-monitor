@@ -1,6 +1,6 @@
 """Collect comments, train when selected labels are available, then refresh scores."""
 import argparse
-import json
+import logging
 import sys
 import time
 from pathlib import Path
@@ -11,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from lib.client import call, monitoring_options, wait_job, wait_ready
+from lib.cli import configure_logging, write_json
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def update(args):
@@ -48,14 +52,14 @@ def update(args):
     scoring = call(args.url, "/api/score", body={
         "model_id": args.model_id, "entity": entity, "limit": args.score_limit,
     })
-    print(json.dumps({
+    write_json({
         "at": datetime.now(timezone.utc).isoformat(),
         "received": received,
         "training": result["status"],
         "version": scoring["version"],
         "scored": scoring["stored"],
         "reason": result.get("reason"),
-    }), flush=True)
+    })
 
 
 def main():
@@ -84,7 +88,7 @@ def main():
             update(args)
         except (RuntimeError, URLError) as error:
             message = error.read().decode(errors="replace") if isinstance(error, HTTPError) else str(error)
-            print(message, file=sys.stderr, flush=True)
+            LOGGER.error("%s", message)
             if args.interval_hours is None:
                 return 1
         if args.interval_hours is None:
@@ -93,6 +97,7 @@ def main():
 
 
 if __name__ == "__main__":
+    configure_logging()
     try:
         sys.exit(main())
     except KeyboardInterrupt:

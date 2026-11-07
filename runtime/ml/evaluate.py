@@ -1,6 +1,7 @@
 """Evaluate teacher labels and trained students against the saved manual review."""
 import argparse
 import json
+import logging
 import os
 import sys
 from collections import Counter
@@ -15,10 +16,14 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runtime" / "ml"))
 from lib.config import load_config, load_monitoring
+from lib.cli import configure_logging, write_json
 from lib.mentions import MentionMatcher
 from student import label_metrics
 from teacher import ensure_model, llama_teacher
 from lib.client import all_items, call, monitoring_options, wait_ready
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def metrics(labels, probabilities, statistic="mean"):
@@ -191,8 +196,10 @@ def main():
         }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    LOGGER.info("Saved evaluation report: %s", args.output)
+    write_json(report)
 
 
 if __name__ == "__main__":
+    configure_logging()
     main()

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -10,9 +11,13 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "runtime/ml")]
 
 from lib.config import load_config, load_monitoring, load_project_config
+from lib.cli import configure_logging, write_json
 from lib.mentions import MentionMatcher
 import encoder
 import nli_encoder
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def main():
@@ -29,7 +34,7 @@ def main():
     bundle = encoder.prepare(config)
     if bundle.get("output_mode") == "nli" or bundle.get("backend") == "nli":
         paths = nli_encoder.ensure_assets(bundle, args.cache_dir.resolve())
-        print(json.dumps({name: str(path) for name, path in paths.items()}, indent=2))
+        write_json({name: str(path) for name, path in paths.items()})
         if args.features:
             dataset = Path(load_project_config()["path_to_offline_demo_data"])
             items = [item for story in json.loads(dataset.read_text(encoding="utf-8")) for item in story["comments"]]
@@ -38,10 +43,11 @@ def main():
             selected = config["student_encoder"].get("feature_cache")
             destination = ROOT / "runtime/ml" / selected if selected else args.cache_dir.resolve() / "nli_features.json"
             nli_encoder.generate_feature_cache(config, items, destination, monitoring["query"])
-            print(f"Prepared features: {destination}")
+            LOGGER.info("Prepared features: %s", destination)
     else:
-        print("Encoder assets are available")
+        LOGGER.info("Encoder assets are available")
 
 
 if __name__ == "__main__":
+    configure_logging()
     main()
