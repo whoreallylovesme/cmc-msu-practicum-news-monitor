@@ -358,9 +358,8 @@ def train_job(job_id):
                 if not plan["holdout"]:
                     if teacher != "reviewed":
                         raise ValueError("Incremental training needs at least one available held-out comment")
-                    # The bundled model reserves unseen raw threads whose labels
-                    # are deliberately outside the training reference. Keep that
-                    # separation when correcting a training label.
+                    # Preserve reserved raw threads even if their reviewed labels
+                    # are no longer available; never move them into training.
                     reserved = (
                         item for item in pages(session, "/comments", {"entity": entity})
                         if plan["history"]["roles"].get(item["story_id"]) == "holdout"

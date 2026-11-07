@@ -1,7 +1,6 @@
 """Frozen CPU encoders, including portable externally cached NLI assets."""
 
 import hashlib
-import io
 import json
 import os
 import re
@@ -68,68 +67,6 @@ def _read_weights(source, cache, suffix, maximum, timeout):
     return data
 
 
-def _bundled_weights(options, maximum):
-    """Reuse only explicitly matching weights from a trusted local artifact."""
-    source = options.get("bundled_artifact")
-    if not source:
-        return None
-    path = Path(source).expanduser()
-    if not path.is_file():
-        return None
-    expected_sources = [options.get("model_weights"), options.get("tokenizer")]
-    # An unpinned source must take the normal loading path.
-    if any(
-        not isinstance(value, dict)
-        or type(value.get("is_local")) is not bool
-        or not isinstance(value.get("path"), str)
-        or not value["path"].strip()
-        or not re.fullmatch(r"[0-9a-f]{64}", str(value.get("sha256", "")).lower())
-        for value in expected_sources
-    ):
-        return None
-    payload = path.read_bytes()
-    manifest = path.with_name("manifest.json")
-    if manifest.is_file():
-        try:
-            document = json.loads(manifest.read_text(encoding="utf-8"))
-            model = document["model"]
-            record = next(row for row in model["versions"] if row["version"] == model["version"])
-            if (
-                (manifest.parent / document["artifact"]).resolve() != path.resolve()
-                or record["artifact_sha256"] != _digest(payload)
-                or record["artifact_bytes"] != len(payload)
-            ):
-                raise ValueError("Bundled encoder artifact checksum or size mismatch")
-        except (KeyError, StopIteration, TypeError, json.JSONDecodeError) as error:
-            raise ValueError("Invalid bundled encoder manifest") from error
-    import joblib
-
-    artifact = joblib.load(io.BytesIO(payload))
-    bundle = artifact.get("encoder") if isinstance(artifact, dict) else None
-    if not isinstance(bundle, dict):
-        return None
-    for configured, key, limit in zip(
-        expected_sources, ("model", "tokenizer"), (maximum, 5 * 1024 * 1024)
-    ):
-        bundled_source = bundle.get(key + "_source")
-        if (
-            not isinstance(bundled_source, dict)
-            or bundled_source.get("path") != configured["path"]
-            or bundled_source.get("is_local") is not configured["is_local"]
-        ):
-            return None
-        expected = configured["sha256"].lower()
-        data = bundle.get(key + "_bytes")
-        if (
-            bundle.get(key + "_sha256") != expected
-            or not isinstance(data, bytes)
-            or not 0 < len(data) <= limit
-            or _digest(data) != expected
-        ):
-            return None
-    return bundle["model_bytes"], bundle["tokenizer_bytes"]
-
-
 def prepare(config):
     """Download once, or read configured local files; artifacts need neither later."""
     options = config.get("student_encoder", {})
@@ -147,12 +84,8 @@ def prepare(config):
     padding_token = options.get("pad_token", "[PAD]")
     if type(padding_id) is not int or padding_id < 0 or not isinstance(padding_token, str) or not padding_token:
         raise ValueError("Encoder padding requires a nonnegative token id and token text")
-    bundled = _bundled_weights(options, maximum)
-    if bundled is None:
-        weights = _read_weights(options.get("model_weights"), cache, ".onnx", maximum, timeout)
-        tokenizer = _read_weights(options.get("tokenizer"), cache, ".json", 5 * 1024 * 1024, timeout)
-    else:
-        weights, tokenizer = bundled
+    weights = _read_weights(options.get("model_weights"), cache, ".onnx", maximum, timeout)
+    tokenizer = _read_weights(options.get("tokenizer"), cache, ".json", 5 * 1024 * 1024, timeout)
     json.loads(tokenizer)
     return {
         "model_bytes": weights,
