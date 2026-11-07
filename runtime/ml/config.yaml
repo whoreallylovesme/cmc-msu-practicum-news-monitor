@@ -43,8 +43,6 @@ incremental_holdout_items: 200
 validation_fraction: 0.2
 semantic_regularization: 0.001
 score_statistic: median
-reviewed_training_path: reviewed_training_labels.json
-reviewed_training_weight: 3
 student_encoder:
   output_mode: nli
   model_weights:

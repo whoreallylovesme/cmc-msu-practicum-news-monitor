@@ -23,9 +23,8 @@ from lib.teacher_contracts import input_hash as service_input_hash
 
 import student
 import training_data as selection
-from dataset_labels import load_dataset_snapshot
+from dataset_labels import fingerprint, load_dataset_snapshot, supervision_hash
 from registry import Registry, serialize
-from reviewed_labels import apply_reviewed, fingerprint as reviewed_fingerprint, load_reviewed_snapshot, supervision_hash
 from teacher_client import TeacherService
 from teacher import (
     cache_namespace,
@@ -99,7 +98,7 @@ class CreateModel(BaseModel):
 
 
 class TrainModel(BaseModel):
-    teacher: Literal["dataset", "reviewed", "service", "live"] = PIPELINE["teacher"]
+    teacher: Literal["dataset", "service", "live"] = PIPELINE["teacher"]
     mode: Literal["from_scratch", "incremental"] = "from_scratch"
     limit: int = Field(default=PIPELINE["training_limit"], ge=4, le=10000)
 
@@ -261,48 +260,27 @@ def labels_for(session, job_id, teacher, entity, items, snapshot, service=None, 
     if model_digest:
         timing["teacher_model_sha256"] = model_digest
     if snapshot:
-        if snapshot.get("kind") == "dataset":
-            timing.update(labels_from_dataset=len(items), dataset_source=snapshot["teacher"])
-        elif snapshot.get("kind") == "reviewed":
-            timing.update(labels_from_reviewed=len(items), reviewed_source=snapshot["teacher"])
+        timing.update(labels_from_dataset=len(items), dataset_source=snapshot["teacher"])
     return [stored[item["id"]] for item in items], namespace, timing
 
 
 def teacher_snapshot(teacher, entity):
     if teacher == "dataset":
         return load_dataset_snapshot(load_project_config()["path_to_offline_demo_data"], entity)
-    if teacher == "reviewed":
-        configured = CONFIG.get("reviewed_training_path")
-        if not configured:
-            raise ValueError("Configure reviewed_training_path before training from reviewed labels")
-        path = BASE / Path(configured)
-        if not path.is_file():
-            raise ValueError(f"Reviewed training labels not found at {path}")
-        return load_reviewed_snapshot(path, entity)
     return None
 
 
 def eligible_comments(session, teacher, entity, snapshot, service=None, teacher_revision=None):
     aliases, matching = service_policy(entity)
-    reviewed = None
-    if CONFIG.get("reviewed_training_path"):
-        path = BASE / CONFIG["reviewed_training_path"]
-        if path.is_file() and entity.casefold() == CONFIG["monitoring"]["query"].casefold():
-            reviewed = load_reviewed_snapshot(path, entity)
     for item in pages(session, "/comments", {"entity": entity}):
         supervision = []
         if snapshot:
             record = snapshot["labels"].get(item["id"])
             if not record:
                 continue
-            if record["fingerprint"] != reviewed_fingerprint(item):
+            if record["fingerprint"] != fingerprint(item):
                 raise ValueError(f"Stale {snapshot['kind']} label for comment {item['id']}: raw context changed")
             supervision.append(supervision_hash(record))
-        reviewed_row = reviewed["labels"].get(item["id"]) if reviewed else None
-        if reviewed_row:
-            if reviewed_row["fingerprint"] != reviewed_fingerprint(item):
-                raise ValueError(f"Stale reviewed label for comment {item['id']}: raw context changed")
-            supervision.append(supervision_hash(reviewed_row))
         if service:
             supervision.append(service.revision + service_input_hash(entity, item, aliases, matching))
         if teacher_revision:
@@ -333,7 +311,6 @@ def train_job(job_id):
             if prior.get("mention_policy") not in (None, policy):
                 raise ValueError("Mention matching policy changed; train from scratch to apply the new scope")
 
-        unlabelled_holdout = []
         with requests.Session() as session:
             service = TeacherService(CONFIG, session) if teacher == "service" else None
             snapshot = teacher_snapshot(teacher, entity)
@@ -357,20 +334,10 @@ def train_job(job_id):
                         persist()
                     return
                 if not plan["holdout"]:
-                    if teacher != "reviewed":
-                        raise ValueError("Incremental training needs at least one available held-out comment")
-                    # Preserve reserved raw threads even if their reviewed labels
-                    # are no longer available; never move them into training.
-                    reserved = (
-                        item for item in pages(session, "/comments", {"entity": entity})
-                        if plan["history"]["roles"].get(item["story_id"]) == "holdout"
-                    )
-                    unlabelled_holdout = list(islice(reserved, int(CONFIG["incremental_holdout_items"])))
+                    raise ValueError("Incremental training needs at least one available held-out comment")
             else:
                 sample = list(islice(items, limit))
                 if len(sample) < 4 and snapshot:
-                    if teacher == "reviewed":
-                        raise ValueError("Import comments with matching reviewed training labels before training")
                     raise ValueError("Import the matching Hacker News snapshot before training")
                 plan = selection.from_scratch(sample, limit, float(CONFIG["validation_fraction"]))
 
@@ -381,13 +348,8 @@ def train_job(job_id):
 
         job_progress(job_id, stage="fitting", **plan["counts"])
         monitoring = CONFIG["monitoring"]
-        review_path = CONFIG.get("reviewed_training_path")
-        fit_items, fit_targets, review = apply_reviewed(
-            train, targets[:len(train)], entity, BASE / review_path if review_path else None,
-            int(CONFIG.get("reviewed_training_weight", 3)),
-        )
         artifact, optimization = student.fit(
-            fit_items, fit_targets, kind, {
+            train, targets[:len(train)], kind, {
                 **CONFIG, "semantic_entity": entity,
                 "semantic_aliases": monitoring["aliases"] if entity.casefold() == monitoring["query"].casefold() else [],
                 "semantic_matching": monitoring["matching"],
@@ -395,20 +357,9 @@ def train_job(job_id):
         )
         artifact["training_history"] = plan["history"]
         report = student.evaluate(
-            artifact, holdout or unlabelled_holdout,
-            targets[len(train):] if holdout else None,
+            artifact, holdout, targets[len(train):],
         )
         report["labelled_items"] = len(holdout)
-        if not holdout:
-            report.update(
-                quality_status="unavailable",
-                quality_note="No labelled held-out comments are available. Raw reserved threads are predicted without estimating quality; prior training threads remain excluded.",
-            )
-        if teacher == "reviewed" and holdout:
-            report["assistant_reviewed"] = student.label_metrics(
-                [max(range(len(target)), key=target.__getitem__) for target in targets[len(train):]],
-                student.predict(artifact, holdout), artifact.get("score_statistic", "mean"),
-            )
         metrics = {
             "mode": mode,
             "base_version": base_version if prior is not None else None,
@@ -416,7 +367,6 @@ def train_job(job_id):
             "training_threads": len({item["story_id"] for item in train}),
             "holdout": report,
             "optimization": optimization,
-            "reviewed_training": review,
             **plan["counts"],
             **timing,
         }
@@ -481,11 +431,8 @@ def health():
     return {
         "status": "ok",
         "service": "ml",
-        "default_training_source": "dataset",
+        "default_training_source": PIPELINE["teacher"],
         "teacher_service_url_configured": bool(CONFIG.get("teacher_service_url")),
-        "reviewed_labels_configured": bool(CONFIG.get("reviewed_training_path")) and (
-            BASE / CONFIG["reviewed_training_path"]
-        ).is_file(),
         "teacher_configured": model_path(CONFIG).is_file() if source["is_local"] else bool(
             CONFIG.get("teacher_url") or model_path(CONFIG).is_file() or source["path"].startswith("https://")
         ),
@@ -537,7 +484,7 @@ def summary(model_id: str):
 @app.post("/models/{model_id}/train", status_code=202)
 def start_training(model_id: str, payload: TrainModel):
     if load_project_config()["offline_demo"] and payload.teacher == "live":
-        raise HTTPException(409, "Offline demo uses saved labels; select dataset or reviewed")
+        raise HTTPException(409, "Offline demo uses saved dataset labels")
     with LOCK:
         model = model_locked(model_id)
         if model["status"] == "training":

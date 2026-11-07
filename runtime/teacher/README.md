@@ -4,7 +4,7 @@ This optional service labels training comments. It is independent of the ML
 student: it imports no student service, PyTorch, GGUF or llama.cpp code.
 The initial configuration uses the pinned large NLI checkpoint. Its scores are experimental silver labels, not human gold.
 
-The original five services remain the default. `dataset` / `reviewed` training and ready
+The original five services remain the default. `dataset` training and ready
 student predictions do not call this service. Explicitly choose the label
 source `service` to use it during training. Teacher is excluded from the five
 mandatory health checks returned by Web Master's `/api/status`.
@@ -77,9 +77,9 @@ then batches requests. Storage caches the labels under
 `entity + service-<revision> + comment_id`; a row is reused only if the full
 input hash matches. Duplicate or missing IDs, foreign IDs, wrong hashes and a
 response revision different from the pinned one are rejected. A new teacher
-revision or a corrected reviewed target makes supervision fresh for
-incremental training while preserving train/holdout thread roles. Reviewed
-corrections are applied to training rows after the split.
+revision refreshes supervision for incremental training while preserving
+train/holdout thread roles. Separate manual corrections are not applied on
+top of the selected label source.
 
 Invalid request bodies return 422; unavailable or invalid model
 assets/inference return 503. An unavailable teacher fails an explicitly

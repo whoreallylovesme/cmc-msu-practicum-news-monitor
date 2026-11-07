@@ -68,7 +68,7 @@ def main():
     parser.add_argument("--entity", help="Override the configured monitoring query")
     parser.add_argument("--model-id", required=True)
     parser.add_argument("--source", help="Override the configured monitoring source")
-    parser.add_argument("--teacher", choices=["dataset", "reviewed", "service", "live"],
+    parser.add_argument("--teacher", choices=["dataset", "service", "live"],
                         help="Label source; defaults to pipeline.teacher")
     parser.add_argument("--pages", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=100)

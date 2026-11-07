@@ -37,7 +37,7 @@ class MonitoringConfig(BaseModel):
 class PipelineConfig(BaseModel):
     model_id: Optional[Identifier] = None
     model_kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = "hard_label"
-    teacher: Literal["dataset", "reviewed", "service", "live"] = "dataset"
+    teacher: Literal["dataset", "service", "live"] = "dataset"
     training_limit: int = Field(default=10000, ge=4, le=10000)
 
 

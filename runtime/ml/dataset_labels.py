@@ -6,7 +6,22 @@ from collections import Counter
 from pathlib import Path
 
 from lib.sentiment import CHOICES
-from reviewed_labels import fingerprint
+
+
+FINGERPRINT_FIELDS = ("text", "parent_text", "story_title", "story_id", "parent_id")
+
+
+def fingerprint(item):
+    """Hash raw label context, independently of Storage's content hash."""
+    fields = {key: item.get(key) for key in FINGERPRINT_FIELDS}
+    raw = json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def supervision_hash(row):
+    """Detect changed targets independently of unchanged comment text."""
+    raw = json.dumps(row["probabilities"], separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 def load_dataset_snapshot(path, entity):
