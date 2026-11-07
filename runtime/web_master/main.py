@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from lib.config import load_config, load_project_config
 from lib.teacher_contracts import TeacherComment
@@ -232,6 +233,39 @@ def service_schema(service: str):
         LOGGER.exception("Could not load the OpenAPI schema for %s", service)
         raise HTTPException(502, f"{service} API schema is unavailable") from error
     return schema
+
+
+@app.api_route("/services/{service}/{path:path}",
+               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE"],
+               include_in_schema=False)
+async def service_request(service: str, path: str, request: Request, current_role: str = Depends(role)):
+    if service not in SCHEMA_SERVICES:
+        raise HTTPException(404, "Unknown service")
+    if service != "web_master" and current_role != "admin":
+        raise HTTPException(403, "Administrator access is required for internal service requests")
+    if service == "web_master":
+        base_url = os.environ.get("MASTER_URL", str(request.base_url)).rstrip("/")
+    else:
+        base_url = TEACHER_URL if service == "teacher" else UPSTREAMS[service]
+    headers = {name: request.headers[name] for name in ("authorization", "content-type", "accept")
+               if name in request.headers}
+    body = await request.body()
+    try:
+        response = await run_in_threadpool(
+            httpx.request, request.method, base_url + "/" + path,
+            params=list(request.query_params.multi_items()), headers=headers, content=body,
+            timeout=CONFIG["timeouts"].get(service, CONFIG["timeouts"]["default"]),
+        )
+    except httpx.TimeoutException as error:
+        LOGGER.exception("Service request timed out for %s", service)
+        raise HTTPException(504, f"{service} timed out") from error
+    except httpx.RequestError as error:
+        LOGGER.exception("Service request failed for %s", service)
+        raise HTTPException(502, f"{service} is unavailable") from error
+    outgoing = {name: response.headers[name]
+                for name in ("content-type", "content-disposition", "www-authenticate")
+                if name in response.headers}
+    return Response(content=response.content, status_code=response.status_code, headers=outgoing)
 
 
 @app.get("/api/session", tags=["System"])
