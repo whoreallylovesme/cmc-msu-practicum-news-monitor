@@ -21,7 +21,7 @@ jobs:
     env:
       COMPOSE_PROJECT_NAME: hn-ci-${{ matrix.dataset }}
       COMPOSE_PROFILES: training
-      COMPOSE_FILE: docker-compose.yml:${{ runner.temp }}/compose-ci.yaml
+      COMPOSE_FILE: docker-compose.yml
       MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
       MONITOR_HTTP_TIMEOUT: "3300"
       CI_DATASET: ${{ matrix.dataset }}
@@ -55,6 +55,8 @@ jobs:
                            "target": "/app/runtime/ml/ci-config.yaml", "read_only": True}],
           }}}
           (temporary / "compose-ci.yaml").write_text(yaml.safe_dump(override), encoding="utf-8")
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as environment:
+              environment.write(f"COMPOSE_FILE=docker-compose.yml:{temporary / 'compose-ci.yaml'}\n")
           demo = yaml.safe_load(Path(f"demo/{os.environ['CI_DATASET']}.yaml").read_text())
           demo["check"]["timeout"] = 3300
           (temporary / "demo-ci.yaml").write_text(yaml.safe_dump(demo), encoding="utf-8")
