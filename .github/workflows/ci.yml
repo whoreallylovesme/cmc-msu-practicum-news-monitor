@@ -23,7 +23,6 @@ jobs:
       COMPOSE_PROFILES: training
       COMPOSE_FILE: docker-compose.yml
       MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
-      MONITOR_HTTP_TIMEOUT: "4800"
       CI_DATASET: ${{ matrix.dataset }}
     steps:
       - uses: actions/checkout@v4

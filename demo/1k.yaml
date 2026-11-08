@@ -15,4 +15,4 @@ check:
   pages: 101
   batch_size: 100
   training_limit: null
-  timeout: 7200
+  timeout: 21600

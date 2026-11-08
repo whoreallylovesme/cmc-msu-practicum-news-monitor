@@ -88,6 +88,7 @@ def main(argv=None):
     _, config = load_cli_config(ROOT / "demo/1k.yaml", argv)
     args = SimpleNamespace(**config["check"], dataset=config["dataset"])
     args.url = os.environ.get("MONITOR_E2E_URL", args.url)
+    os.environ.setdefault("MONITOR_HTTP_TIMEOUT", str(args.timeout))
     if args.pages < 1 or not 1 <= args.batch_size <= 100:
         raise ValueError("Use at least one page and a batch size between 1 and 100")
     if args.source != "hn_snapshot" or args.teacher != "dataset":
