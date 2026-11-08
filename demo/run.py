@@ -51,13 +51,13 @@ def main():
         "MASTER_URL": urls["web_master"],
         "PYTHONPATH": os.pathsep.join(filter(None, [str(ROOT), os.environ.get("PYTHONPATH")])),
     }
-    common["MONITOR_DATASET_PATH"] = f"demo/hn_{dataset}.json"
-    common.setdefault("ML_MODEL_CACHE_DIR", str(data_dir.resolve() / "ml" / "weights"))
+    common.setdefault("MONITOR_DATASET_PATH", str(ROOT / "demo" / f"hn_{dataset}.json"))
     common.setdefault("ML_ENCODER_CACHE_DIR", str(data_dir.resolve() / "ml" / "encoder-weights"))
     if with_teacher:
         common["TEACHER_SERVICE_URL"] = urls["teacher"]
         common["TEACHER_URL"] = urls["teacher"]
-        common.setdefault("TEACHER_ENCODER_CACHE_DIR", str(data_dir.resolve() / "teacher" / "encoder-weights"))
+        common.setdefault("TEACHER_MODEL_CACHE_DIR", str(data_dir.resolve() / "teacher" / "weights"))
+        common.setdefault("TEACHER_LOG_DIR", str(data_dir.resolve() / "teacher" / "logs"))
     common.setdefault("OMP_NUM_THREADS", "2")
     common.setdefault("OPENBLAS_NUM_THREADS", "2")
     processes = {}

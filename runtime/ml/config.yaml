@@ -3,66 +3,57 @@ storage_url: http://storage:8000
 storage_timeout: 20
 storage_page_size: 200
 teacher_service_url: http://teacher:8000
-teacher_service_timeout: 180
-teacher_service_batch_size: 16
-model_weights:
-  path: https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF/resolve/4168f45a16a1290d65a4ec0fa312ae917a4c15d6/Qwen_Qwen3.5-4B-Q4_K_M.gguf
-  is_local: false
-model_cache_dir: /models
-model_checksums:
-  ? https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF/resolve/4168f45a16a1290d65a4ec0fa312ae917a4c15d6/Qwen_Qwen3.5-4B-Q4_K_M.gguf
-  : 13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983
-model_download_connect_timeout: 10
-model_download_timeout: 120
-teacher_url: ''
-teacher_revision: ''
-teacher_inference_mode: structured
-teacher_prompt_path: prompts/entity_sentiment.yaml
-teacher_temperature: 0.2
-teacher_max_tokens: 220
-teacher_label_smoothing: 0.05
-llama_binary: llama-server
-llama_bind_host: 127.0.0.1
-llama_port: 0
-llama_parallel: 1
-llama_gpu_layers: 0
-llama_threads: 4
-llama_context: 4096
-llama_startup_timeout: 90
-llama_request_timeout: 180
-llama_chat_template_kwargs:
-  enable_thinking: false
-max_features: 30000
-hidden_units: 12
-regularization: 0.0001
-max_iterations: 1000
-incremental_iterations: 300
-incremental_anchor: 0.001
+teacher_service_timeout: 3600
+teacher_service_batch_size: 4
 incremental_replay_items: 256
 incremental_holdout_items: 200
 validation_fraction: 0.2
-semantic_regularization: 0.001
-score_statistic: median
+score_statistic: mean
+auxiliary_supervision:
+  # Включается после независимой проверки: demo/newsmtsc_train.jsonl.
+  path: null
+  sha256: 02f855eb74ab57c759f2f7e0dbb8e8310a1ca0a44eff4929dbb405204dc2e528
+  incremental_replay_items: 256
 student_encoder:
-  output_mode: nli
   model_weights:
-    path: https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0/resolve/8e7e5af5983a0ddb1a5b45a38b129ab69e2258e8/onnx/model.onnx
+    path: https://huggingface.co/answerdotai/ModernBERT-large/resolve/45bb4654a4d5aaff24dd11d4781fa46d39bf8c13/model.safetensors
     is_local: false
-    sha256: d46fa6c1addc598abd34af8651120291f51417ddfce45b9d5f70bc32d3efa81c
-  tokenizer:
-    path: https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0/resolve/8e7e5af5983a0ddb1a5b45a38b129ab69e2258e8/onnx/tokenizer.json
-    is_local: false
-    sha256: bfead76cd475f67849a6710fdd16497f75732773e4d90e40d3b5bb5d3f031df9
-  model_size_bytes: 738563249
-  tokenizer_size_bytes: 8649136
-  hypotheses:
-  - The author expresses a negative opinion about {entity}.
-  - The author makes a neutral or factual statement about {entity}.
-  - The author expresses a positive opinion about {entity}.
-  entailment_index: 0
+    sha256: 44510fec5d3a81a1877f225637b869495f18e55f6f23a09abb9be0acc030295f
+    size_bytes: 1583544840
+  # Пути берутся рядом с model_weights; для другого расположения задайте path/is_local.
+  companion_assets:
+    config.json:
+      sha256: 55dca68059e98f0debf8eb63ab355c451c65b1f5d90fdca4754113fdaadd2cca
+      size_bytes: 1194
+    tokenizer.json:
+      sha256: 9fd55248d51d33976b324fc11592e28071da7d41e0e9401dfb7082e30574b7b1
+      size_bytes: 2132967
+    tokenizer_config.json:
+      sha256: 3cd2017ff46d0a527e5d39cae39272eccfa1f19bb9f89b05d166aab2e38354e2
+      size_bytes: 20810
+    special_tokens_map.json:
+      sha256: ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049
+      size_bytes: 694
+  cache_dir: /opt/news-models
+  download_timeout: 900
+  max_model_bytes: 2147483648
+  device: auto
+  dtype: float32
+  threads: 4
   max_length: 512
-  threads: 2
-  feature_cache: null
-  download_timeout: 180
-  max_model_bytes: 1073741824
-semantic_head: joint
+  batch_size: 4
+  gradient_accumulation: 4
+  epochs: 3
+  incremental_epochs: 1
+  max_steps: null
+  log_every_steps: 50
+  learning_rate: 0.0003
+  head_learning_rate: 0.001
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  distillation_temperature: 1.0
+  gradient_checkpointing: false
+  seed: 42

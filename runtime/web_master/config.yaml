@@ -8,6 +8,7 @@ timeouts:
   default: 8
   collector: 120
   ml: 180
+  teacher: 3600
 local_accounts:
   admin:
     username: admin

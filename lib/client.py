@@ -55,8 +55,8 @@ def monitoring_options(base, *, entity=None, source=None, teacher=None):
     return selected_entity, selected_source, selected_teacher
 
 
-def train_model(base, entity, teacher, kind, limit, timeout):
-    model = call(base, "/services/ml/models", body={"entity": entity, "kind": kind})
+def train_model(base, entity, teacher, limit, timeout):
+    model = call(base, "/services/ml/models", body={"entity": entity})
     model_id = model["id"]
     job = call(base, f"/services/ml/models/{model_id}/train", body={
         "teacher": teacher, "limit": limit, "mode": "from_scratch",

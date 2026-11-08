@@ -12,9 +12,7 @@ check:
   entity: null
   source: hn_snapshot
   teacher: dataset
-  kind: null
-  compare: true
   pages: 101
   batch_size: 100
   training_limit: null
-  timeout: 1200
+  timeout: 7200

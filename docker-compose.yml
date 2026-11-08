@@ -11,10 +11,10 @@ services:
       context: .
       dockerfile: runtime/teacher/Dockerfile
     environment:
-      TEACHER_ENCODER_CACHE_DIR: /opt/news-teacher-models
+      TEACHER_MODEL_CACHE_DIR: /models
     volumes:
       - ./runtime/teacher/config.yaml:/app/runtime/teacher/config.yaml:ro
-      - teacher-encoder-weights:/opt/news-teacher-models
+      - teacher-models:/models
     ports:
       - "127.0.0.1:${MONITOR_TEACHER_PORT:-8082}:8000"
     healthcheck: *health
@@ -44,7 +44,6 @@ services:
     build:
       context: .
       dockerfile: runtime/ml/Dockerfile
-      target: ${ML_IMAGE_TARGET:-runtime}
     environment:
       STORAGE_URL: http://storage:8000
       MONITOR_DATA_DIR: /data
@@ -52,7 +51,6 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ml-data:/data
-      - teacher-models:/models
       - student-weights:/opt/news-models
       - ./runtime/ml/config.yaml:/app/runtime/ml/config.yaml:ro
     depends_on:
@@ -103,4 +101,3 @@ volumes:
   ml-data:
   teacher-models:
   student-weights:
-  teacher-encoder-weights:

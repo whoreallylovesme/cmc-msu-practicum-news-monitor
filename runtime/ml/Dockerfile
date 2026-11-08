@@ -1,5 +1,4 @@
-ARG LLAMA_IMAGE=ghcr.io/ggml-org/llama.cpp:server
-FROM python:3.12-slim-trixie AS python-runtime
+FROM python:3.12-slim-trixie
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
@@ -14,30 +13,17 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY runtime/ml/requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+RUN python -m pip install --no-cache-dir torch==2.15.0 --index-url ${TORCH_INDEX_URL} \
+    && python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
 COPY config.yaml ./config.yaml
 COPY runtime/ml ./runtime/ml
 COPY demo/hn_*.json ./demo/
-RUN install -d -o 10001 -g 10001 /data /models /opt/news-models
+COPY demo/newsmtsc_train.jsonl ./demo/
+RUN install -d -o 10001 -g 10001 /data /opt/news-models
 USER 10001:10001
 WORKDIR /app/runtime/ml
 
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-FROM ${LLAMA_IMAGE} AS llama
-
-FROM python-runtime AS with-llama
-USER root
-ENV PATH=/opt/llama.cpp:$PATH \
-    LD_LIBRARY_PATH=/opt/llama.cpp
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libcurl4t64 \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=llama /app /opt/llama.cpp
-RUN /opt/llama.cpp/llama-server --version
-USER 10001:10001
-
-# Keep the default target independent of the optional llama.cpp image.
-FROM python-runtime AS runtime

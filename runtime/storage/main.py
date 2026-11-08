@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 from lib.config import load_config
 from lib.contracts import Comment as CommentRecord
 from lib.contracts import Identifier, Prediction, Probabilities
-from lib.mentions import MentionMatcher
 
 from database import (
     PREDICTIONS_JOIN,
@@ -93,8 +92,7 @@ def parse_prediction(row: sqlite3.Row) -> dict:
 
 
 def empty_counts() -> dict:
-    return {"comments": 0, "mentions": 0, "direct_mentions": 0, "typo_mentions": 0,
-            "context_mentions": 0, "scored": 0, "relevant": 0, "score": 0.0}
+    return {"comments": 0, "mentions": 0, "scored": 0, "relevant": 0, "score": 0.0}
 
 
 def average_score(counts: dict) -> dict:
@@ -295,15 +293,8 @@ def create_app(settings: Settings) -> FastAPI:
         entity: Identifier,
         model_id: Optional[Identifier] = None,
         bucket: Literal["day", "week"] = "week",
-        aliases: list[str] = Query(default=[], max_length=10),
-        allow_typos: bool = True,
-        allow_context: bool = True,
-        context_hints: list[str] = Query(default=[], max_length=20),
     ):
-        """Count clear mentions with the same lightweight policy used by the model."""
-        matcher = MentionMatcher(entity, aliases, {
-            "allow_typos": allow_typos, "allow_context": allow_context, "context_hints": context_hints,
-        })
+        """Count model-assessed mentions; unscored comments have unknown relevance."""
         period = "date(c.published_at)" if bucket == "day" else "date(c.published_at, '-6 days', 'weekday 1')"
         summary = empty_counts()
         periods = {}
@@ -318,8 +309,6 @@ def create_app(settings: Settings) -> FastAPI:
                 (model_id, entity),
             )
             for row in rows:
-                kind = matcher.match(dict(row))
-                mention = kind is not None
                 scored = row["comment_id"] is not None
                 relevant = bool(row["relevant"])
                 counts = (
@@ -329,10 +318,7 @@ def create_app(settings: Settings) -> FastAPI:
                 )
                 for counter in counts:
                     counter["comments"] += 1
-                    counter["mentions"] += mention
-                    counter["direct_mentions"] += kind in {"direct", "alias"}
-                    counter["typo_mentions"] += kind == "typo"
-                    counter["context_mentions"] += kind == "context"
+                    counter["mentions"] += relevant
                     counter["scored"] += scored
                     counter["relevant"] += relevant
                     counter["score"] += row["score"] or 0

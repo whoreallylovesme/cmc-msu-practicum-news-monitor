@@ -107,7 +107,6 @@ def entity_settings(entity: str) -> dict:
     return {
         "name": entity,
         "aliases": MONITORING["aliases"] if entity == MONITORING["query"] else [],
-        "matching": MONITORING["matching"],
     }
 
 
@@ -377,10 +376,6 @@ def score(request: ScoreRequest):
 
 
 def model_analytics(entity, model, bucket):
-    settings = entity_settings(entity)
-    policy = model.get("mention_policy") if model else None
-    aliases = policy["aliases"] if policy else settings["aliases"]
-    matching = policy["options"] if policy else settings["matching"]
     result = upstream(
         "storage",
         "GET",
@@ -389,8 +384,6 @@ def model_analytics(entity, model, bucket):
             "entity": entity,
             "model_id": prediction_key(model) if model else None,
             "bucket": bucket,
-            "aliases": aliases,
-            **matching,
         },
     )
 
