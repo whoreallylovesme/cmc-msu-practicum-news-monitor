@@ -24,8 +24,8 @@ auxiliary_supervision:
       selection:
         path: demo/training_sources.yaml
         is_local: true
-        sha256: 32eedc5c0e1f4debadff27b93f9f2c73dd5090a0dc079491632a1be55f014fa3
-        size_bytes: 401913
+        sha256: f11b6b560ea092aa04c36120466b1f3f6147111876fd557fb9f98e39856fc17c
+        size_bytes: 1164226
     - name: airline
       format: airline_csv
       asset:
@@ -36,8 +36,8 @@ auxiliary_supervision:
       selection:
         path: demo/training_sources.yaml
         is_local: true
-        sha256: 32eedc5c0e1f4debadff27b93f9f2c73dd5090a0dc079491632a1be55f014fa3
-        size_bytes: 401913
+        sha256: f11b6b560ea092aa04c36120466b1f3f6147111876fd557fb9f98e39856fc17c
+        size_bytes: 1164226
 student_encoder:
   model_weights:
     path: https://huggingface.co/MoritzLaurer/ModernBERT-large-zeroshot-v2.0/resolve/a51e07b524299e309dd2b88d48b0cfa2bd9ec598/model.safetensors
@@ -67,12 +67,14 @@ student_encoder:
   max_length: 512
   batch_size: 4
   gradient_accumulation: 4
-  epochs: 1
+  epochs: 2
   incremental_epochs: 1
   max_steps: null
   log_every_steps: 50
-  learning_rate: 0.0003
-  head_learning_rate: 0.001
+  learning_rate: 0.0001
+  head_learning_rate: 0.0003
+  # Предобученную NLI-проекцию меняем медленнее нового классификатора.
+  pretrained_head_learning_rate: 0.00003
   weight_decay: 0.01
   max_grad_norm: 1.0
   lora_rank: 8

@@ -238,6 +238,25 @@ def _snapshot(model, bundle, lora, entity, aliases, training, statistic):
     }
 
 
+def _optimizer_groups(named, learning_rate, head_learning_rate, pretrained_head_learning_rate=None):
+    """Group trainable weights; an omitted pretrained rate keeps the old groups."""
+    pretrained_rate = head_learning_rate if pretrained_head_learning_rate is None else float(pretrained_head_learning_rate)
+    groups = [{"params": [], "lr": learning_rate},
+              {"params": [], "lr": head_learning_rate},
+              {"params": [], "lr": pretrained_rate}]
+    shared_head = []
+    for name, parameter in named:
+        if ".lora_" in name:
+            groups[0]["params"].append(parameter)
+        else:
+            shared_head.append(parameter)
+            index = 1 if "classifier" in name.split(".") else 2
+            groups[index]["params"].append(parameter)
+    if pretrained_rate == head_learning_rate:
+        return [groups[0], {"params": shared_head, "lr": head_learning_rate}]
+    return groups
+
+
 def fit(items, targets, config, prior=None, on_epoch=None):
     global _RUNTIME
     settings = config["student_encoder"]
@@ -276,13 +295,15 @@ def fit(items, targets, config, prior=None, on_epoch=None):
         if settings.get("gradient_checkpointing", False):
             model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         named = [(name, parameter) for name, parameter in model.named_parameters() if parameter.requires_grad]
-        adapter_parameters = [parameter for name, parameter in named if ".lora_" in name]
-        head_parameters = [parameter for name, parameter in named if ".lora_" not in name]
         learning_rate = float(settings.get("learning_rate", 0.0003))
-        optimizer = torch.optim.AdamW([
-            {"params": adapter_parameters, "lr": learning_rate},
-            {"params": head_parameters, "lr": float(settings.get("head_learning_rate", 0.001))},
-        ], weight_decay=float(settings.get("weight_decay", 0.01)))
+        head_learning_rate = float(settings.get("head_learning_rate", 0.001))
+        pretrained_head_learning_rate = settings.get("pretrained_head_learning_rate")
+        pretrained_head_learning_rate = (head_learning_rate if pretrained_head_learning_rate is None
+                                         else float(pretrained_head_learning_rate))
+        optimizer = torch.optim.AdamW(
+            _optimizer_groups(named, learning_rate, head_learning_rate, pretrained_head_learning_rate),
+            weight_decay=float(settings.get("weight_decay", 0.01)),
+        )
         model.train()
         total_loss, batches, steps, seen, completed_epochs = 0.0, 0, 0, 0, 0
         count = math.ceil(len(items) / bundle["batch_size"])
@@ -339,7 +360,8 @@ def fit(items, targets, config, prior=None, on_epoch=None):
                         "gradient_checkpointing": bool(settings.get("gradient_checkpointing", False)),
                         "optimizer": {"name": "AdamW", "state_restored": False,
                                       "learning_rate": learning_rate,
-                                      "head_learning_rate": float(settings.get("head_learning_rate", 0.001)),
+                                      "head_learning_rate": head_learning_rate,
+                                      "pretrained_head_learning_rate": pretrained_head_learning_rate,
                                       "weight_decay": float(settings.get("weight_decay", 0.01)),
                                       "max_grad_norm": float(settings.get("max_grad_norm", 1.0))}}
             if on_epoch is not None:
@@ -369,6 +391,7 @@ def fit(items, targets, config, prior=None, on_epoch=None):
             "training_method": "LoRA attention and classification head; confidence-weighted KL and partial four-class marginal loss",
             "encoder_sha256": bundle["files"]["model.safetensors"]["sha256"],
             "elapsed_seconds": time.perf_counter() - started, "device": device,
+            "optimizer": copy.deepcopy(training["optimizer"]),
             "partial_label_items": int(partial.sum()),
             "polarity_only_items": sum(bool(item.get("polarity_only")) for item in items),
             "sample_weight_sum": float(sample_weights.sum()),
