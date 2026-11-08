@@ -190,7 +190,7 @@ def _identity(artifact):
     return digest.hexdigest()
 
 
-def _loss(logits, expected, partial, temperature, torch):
+def _loss(logits, expected, partial, temperature, torch, sample_weight=None):
     log_probabilities = torch.log_softmax(logits.float() / temperature, dim=-1)
     if temperature != 1.0:
         expected = expected.pow(1.0 / temperature)
@@ -199,12 +199,34 @@ def _loss(logits, expected, partial, temperature, torch):
     if partial.any():
         grouped = torch.stack([
             torch.logsumexp(log_probabilities[:, :2], dim=-1), log_probabilities[:, 2],
-            torch.logsumexp(log_probabilities[:, 3:OFF_TOPIC], dim=-1),
+            torch.logsumexp(log_probabilities[:, 3:OFF_TOPIC], dim=-1), log_probabilities[:, OFF_TOPIC],
         ], dim=-1)
-        reference = torch.stack([expected[:, :2].sum(dim=-1), expected[:, 2], expected[:, 3:OFF_TOPIC].sum(dim=-1)], dim=-1)
+        reference = torch.stack([expected[:, :2].sum(dim=-1), expected[:, 2],
+                                 expected[:, 3:OFF_TOPIC].sum(dim=-1), expected[:, OFF_TOPIC]], dim=-1)
         marginal = torch.nn.functional.kl_div(grouped, reference, reduction="none").sum(dim=-1)
         losses = torch.where(partial, marginal, losses)
+    if sample_weight is not None:
+        # Confidence scales each example's contribution; it is not cancelled
+        # by renormalizing a low-confidence minibatch to unit total weight.
+        losses = losses * sample_weight
     return losses.mean() * temperature ** 2
+
+
+def _training_targets(items, targets):
+    targets = np.asarray(targets, dtype=np.float32)
+    if targets.shape != (len(items), len(CHOICES)) or not len(items) or not np.isfinite(targets).all() or (targets < 0).any() or (targets.sum(axis=1) <= 0).any():
+        raise ValueError("Training needs finite nonnegative six-class targets")
+    targets = targets / targets.sum(axis=1, keepdims=True)
+    # Older NewsMTSC inputs use polarity_only; their F mass is zero and their
+    # three-polarity objective is unchanged by the extra zero-mass group.
+    partial = np.asarray([bool(item.get("partial_labels", item.get("polarity_only", False))) for item in items])
+    weights = np.asarray([item.get("sample_weight", 1.0) for item in items], dtype=np.float64)
+    if not np.isfinite(weights).all() or (weights <= 0).any() or (weights > 1).any():
+        raise ValueError("sample_weight must be finite, positive and at most one")
+    weights = weights.astype(np.float32)
+    if (weights <= 0).any():
+        raise ValueError("sample_weight must remain positive at float32 precision")
+    return targets, partial, weights
 
 
 def _snapshot(model, bundle, lora, entity, aliases, training, statistic):
@@ -222,13 +244,7 @@ def fit(items, targets, config, prior=None, on_epoch=None):
     bundle = prepare(config)
     entity = str(config.get("entity") or "").strip()
     aliases = list(config.get("aliases", []))
-    targets = np.asarray(targets, dtype=np.float32)
-    if targets.shape != (len(items), len(CHOICES)) or not len(items) or not np.isfinite(targets).all() or (targets < 0).any() or (targets.sum(axis=1) <= 0).any():
-        raise ValueError("Training needs finite nonnegative six-class targets")
-    targets = targets / targets.sum(axis=1, keepdims=True)
-    partial = np.asarray([bool(item.get("polarity_only")) for item in items])
-    if (targets[partial, OFF_TOPIC] > 1e-6).any():
-        raise ValueError("Polarity-only references must refer to a relevant target")
+    targets, partial, sample_weights = _training_targets(items, targets)
     lora = {"rank": int(settings.get("lora_rank", 8)), "alpha": int(settings.get("lora_alpha", 16)),
             "dropout": float(settings.get("lora_dropout", 0.05))}
     if not entity or bundle["max_length"] < 16 or bundle["batch_size"] < 1 or lora["rank"] < 1 or lora["alpha"] < 1 or not 0 <= lora["dropout"] < 1:
@@ -286,7 +302,8 @@ def fit(items, targets, config, prior=None, on_epoch=None):
                 logits = model(**batch).logits
                 expected = torch.as_tensor(targets[selected], device=device, dtype=torch.float32)
                 selected_partial = torch.as_tensor(partial[selected], device=device, dtype=torch.bool)
-                loss = _loss(logits, expected, selected_partial, temperature, torch)
+                selected_weights = torch.as_tensor(sample_weights[selected], device=device, dtype=torch.float32)
+                loss = _loss(logits, expected, selected_partial, temperature, torch, selected_weights)
                 if not torch.isfinite(loss):
                     raise ValueError("Student training produced a non-finite loss")
                 # Weight a short final batch by its actual number of examples.
@@ -316,6 +333,9 @@ def fit(items, targets, config, prior=None, on_epoch=None):
                         "epochs_requested": epochs, "epochs_completed": completed_epochs,
                         "seed": seed, "gradient_accumulation": accumulation,
                         "distillation_temperature": temperature,
+                        "sample_weight_sum": float(sample_weights.sum()),
+                        "sample_weighted_items": int((sample_weights != 1).sum()),
+                        "partial_label_items": int(partial.sum()),
                         "gradient_checkpointing": bool(settings.get("gradient_checkpointing", False)),
                         "optimizer": {"name": "AdamW", "state_restored": False,
                                       "learning_rate": learning_rate,
@@ -346,10 +366,13 @@ def fit(items, targets, config, prior=None, on_epoch=None):
             "epochs": completed_epochs, "epochs_requested": epochs, "max_steps": max_steps,
             "iterations": steps, "examples_seen": seen, "objective": total_loss / batches,
             "warm_started": prior is not None, "base_encoder_frozen": True,
-            "training_method": "LoRA attention and classification head; KL distillation and marginal loss for polarity-only references",
+            "training_method": "LoRA attention and classification head; confidence-weighted KL and partial four-class marginal loss",
             "encoder_sha256": bundle["files"]["model.safetensors"]["sha256"],
             "elapsed_seconds": time.perf_counter() - started, "device": device,
-            "polarity_only_items": int(partial.sum()),
+            "partial_label_items": int(partial.sum()),
+            "polarity_only_items": sum(bool(item.get("polarity_only")) for item in items),
+            "sample_weight_sum": float(sample_weights.sum()),
+            "sample_weighted_items": int((sample_weights != 1).sum()),
         }
         return artifact, optimization
 

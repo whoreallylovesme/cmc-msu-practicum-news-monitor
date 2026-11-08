@@ -17,7 +17,7 @@ from metrics import label_with, save_result
 
 
 LOGGER = logging.getLogger(__name__)
-DATASETS = {"newsmtsc_rw", "newsmtsc_mt", "weather_sentiment", "airline_sentiment"}
+DATASETS = {"newsmtsc_rw", "newsmtsc_mt", "weather_sentiment", "airline_sentiment", "weather_adaptation"}
 
 
 def local_path(value):
@@ -88,7 +88,8 @@ def main():
     assert operation in {"prepare", "evaluate_teacher", "evaluate_student", "label_demo"}, "operation: prepare, evaluate_teacher, evaluate_student или label_demo"
     directory = local_path(config["data_dir"])
     if operation == "prepare":
-        manifest = prepare(directory)
+        selector = local_path(config.get("weather_benchmark", "demo/quality/weather_benchmark.yaml")) if "weather_adaptation" in config.get("datasets", []) else None
+        manifest = prepare(directory, weather_benchmark=selector)
         write_json({"manifest": str(directory / "manifest.json"), "datasets": [row["name"] for row in manifest["datasets"]]})
     elif operation == "evaluate_teacher":
         write_json({"results": evaluate(config, directory, local_path(config["output_dir"]))})

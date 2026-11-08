@@ -13,6 +13,31 @@ auxiliary_supervision:
   path: demo/newsmtsc_train.jsonl
   sha256: 02f855eb74ab57c759f2f7e0dbb8e8310a1ca0a44eff4929dbb405204dc2e528
   incremental_replay_items: 256
+  additional_sources:
+    - name: weather
+      format: crowdflower_weather_csv
+      asset:
+        path: https://raw.githubusercontent.com/sjoelee/twitter-weather/29466f8d9c60d5153debd37a6fbae2c8ed92f821/train.csv
+        is_local: false
+        sha256: c20520ef32c48df667e5d2473da48868c395d6fb39568682b0a8006fc3bbbb04
+        size_bytes: 17997536
+      selection:
+        path: demo/training_sources.yaml
+        is_local: true
+        sha256: 32eedc5c0e1f4debadff27b93f9f2c73dd5090a0dc079491632a1be55f014fa3
+        size_bytes: 401913
+    - name: airline
+      format: airline_csv
+      asset:
+        path: https://huggingface.co/datasets/osanseviero/twitter-airline-sentiment/resolve/dec17e9391b767791e3808a655654467605a9d49/Tweets.csv
+        is_local: false
+        sha256: ea94b23f41892b290dec3330bb8cf9cb6b8bc669eaae5f3a84c40f7b0de8f15e
+        size_bytes: 3421431
+      selection:
+        path: demo/training_sources.yaml
+        is_local: true
+        sha256: 32eedc5c0e1f4debadff27b93f9f2c73dd5090a0dc079491632a1be55f014fa3
+        size_bytes: 401913
 student_encoder:
   model_weights:
     path: https://huggingface.co/MoritzLaurer/ModernBERT-large-zeroshot-v2.0/resolve/a51e07b524299e309dd2b88d48b0cfa2bd9ec598/model.safetensors

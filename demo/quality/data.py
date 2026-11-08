@@ -301,12 +301,67 @@ def prepare_airline(directory):
     }
 
 
-def prepare(directory):
+def canonical_adaptation(row, selected, split, entity):
+    """Воспроизвести человеческую разметку; unknown не превращается в C/F."""
+    from lib.training_sources import _weather
+
+    result = _weather(row, {"entity": entity})
+    votes = [float(row[f"s{i}"]) for i in range(1, 6)]
+    winner = max(range(5), key=votes.__getitem__)
+    assert result is not None and winner != 0 and votes.count(votes[winner]) == 1
+    target, text, probabilities, weight = result
+    return {
+        "id": selected["id"], "group_id": selected["group_id"], "entity": target, "text": text,
+        "coarse_probabilities": probabilities, "sample_weight": weight, "split": split,
+        "dataset": "weather_adaptation", "story_title": "", "parent_text": "",
+        "gold_relevant": winner != 4,
+        "gold_polarity": None if winner == 4 else ("negative", "neutral", "positive")[winner - 1],
+        "gold_intensity": None, "source_known_mass": weight,
+    }
+
+
+def prepare_weather_adaptation(directory, selector_path):
+    """Только локальная реконструкция закреплённых DEV/FINAL, без новых разбиений."""
+    import yaml
+
+    descriptor = yaml.safe_load(Path(selector_path).read_text())
+    assert descriptor["version"] == 1 and descriptor["dataset"] == "weather_adaptation"
+    source = descriptor["source"]
+    raw = fetch(directory, source["url"], "partly-sunny-original-train.csv", source["sha256"], 64 * 1024 ** 2)
+    assert len(raw) == source["size_bytes"]
+    original = {}
+    for row in csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))):
+        identity = "partly-sunny:" + row["id"]
+        assert identity not in original
+        original[identity] = row
+    files, used_ids, used_groups = {}, set(), set()
+    for split in ("dev", "test"):
+        spec = descriptor["splits"][split]
+        selected = spec["items"]
+        ids, groups = {row["id"] for row in selected}, {row["group_id"] for row in selected}
+        assert len(selected) == len(ids) == len(groups) and not ids & used_ids and not groups & used_groups
+        rows = [canonical_adaptation(original[row["id"]], row, split, descriptor["entity"]) for row in selected]
+        payload = "".join(json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+                          + "\n" for row in rows).encode()
+        assert digest(payload) == spec["canonical_sha256"], "Changed frozen Weather benchmark"
+        filename = f"weather_adaptation_{split}.jsonl"
+        (Path(directory) / filename).write_bytes(payload)
+        files[f"weather_adaptation_{split}"] = {"path": filename, "rows": len(rows), "sha256": digest(payload)}
+        used_ids.update(ids)
+        used_groups.update(groups)
+    return {"name": "Partly Sunny — fixed independent human Weather benchmark", "dataset": "weather_adaptation",
+            "source": source, "license": source["license"], "reference": descriptor["reference"],
+            "split_policy": descriptor["split_policy"], "files": files}
+
+
+def prepare(directory, weather_benchmark=None):
     """Воспроизводимые данные и manifest; ни одна разметка не создается моделью."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     manifest = {"schema": 1, "purpose": "Independent human evaluation; never teacher-agreement accuracy.",
                 "datasets": [prepare_news(directory), prepare_weather(directory), prepare_airline(directory)]}
+    if weather_benchmark is not None:
+        manifest["datasets"].append(prepare_weather_adaptation(directory, weather_benchmark))
     (directory / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     for dataset in manifest["datasets"]:
         LOGGER.info("%s: %s", dataset["name"], {key: row["rows"] for key, row in dataset["files"].items()})

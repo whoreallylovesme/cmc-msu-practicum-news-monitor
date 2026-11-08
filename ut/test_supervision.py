@@ -40,6 +40,13 @@ class SupervisionTests(unittest.TestCase):
         self.assertEqual(load_auxiliary({"auxiliary_supervision": {"path": None}}),
                          ([], [], {"enabled": False, "items": 0}))
 
+    def test_empty_additional_sources_preserve_the_news_snapshot(self):
+        config = self.configured()
+        before = load_auxiliary(config)
+        config["auxiliary_supervision"]["additional_sources"] = []
+        self.assertEqual(load_auxiliary(config), before)
+        self.assertEqual(before[2]["sha256"], config["auxiliary_supervision"]["sha256"])
+
     def test_gold_is_not_a_model_input_and_intensity_is_not_assigned(self):
         items, targets, metadata = load_auxiliary(self.configured())
         self.assertEqual(len(items), 20)

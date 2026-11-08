@@ -2,6 +2,8 @@ name: Проверка демонстрации
 
 on:
   push:
+    paths-ignore:
+      - '**/*.md'
 
 concurrency:
   group: snapshot-demo-${{ github.ref }}

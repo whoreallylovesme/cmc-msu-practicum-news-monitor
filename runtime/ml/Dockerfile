@@ -21,6 +21,7 @@ COPY config.yaml ./config.yaml
 COPY runtime/ml ./runtime/ml
 COPY demo/hn_*.json ./demo/
 COPY demo/newsmtsc_train.jsonl ./demo/
+COPY demo/training_sources.yaml ./demo/
 RUN install -d -o 10001 -g 10001 /data /opt/news-models
 USER 10001:10001
 WORKDIR /app/runtime/ml

@@ -23,7 +23,7 @@ def canonical_target_text(row, mark_target=True):
     return text[:start] + "[TARGET]" + text[start:end] + "[/TARGET]" + text[end:]
 
 
-def load_auxiliary(config, mode="from_scratch", version=1, seed=42):
+def _load_news(config, mode="from_scratch", version=1, seed=42):
     """Return model inputs, partial six-slot targets and auditable sample metadata.
 
     Gold polarity controls the marginal training loss, not the model input.
@@ -78,4 +78,48 @@ def load_auxiliary(config, mode="from_scratch", version=1, seed=42):
         "available_items": available, "items": len(items),
         "selected_ids": [item["id"] for item in items], "source_ids": [row["id"] for row in rows],
         "target_semantics": "Marginal negative A+B, neutral C, positive D+E; no intensity or off-topic labels",
+    }
+
+
+def load_auxiliary(config, mode="from_scratch", version=1, seed=42):
+    """Keep News-only revisions unchanged; optionally append pinned CSV sources."""
+    spec = config.get("auxiliary_supervision") or {}
+    if not spec.get("additional_sources"):
+        return _load_news(config, mode, version, seed)
+    if mode not in {"from_scratch", "incremental"}:
+        raise ValueError("Auxiliary mode must be from_scratch or incremental")
+    from lib.training_sources import FORMAT_VERSION, identity, load_sources
+
+    items, targets, news = _load_news(config, "from_scratch", version, seed)
+    extra_items, extra_targets, sources = load_sources(config)
+    items, targets = items + extra_items, targets + extra_targets
+    if len({item["id"] for item in items}) != len(items):
+        raise ValueError("Combined auxiliary sources repeat training IDs")
+    available = len(items)
+    revision = identity({"format_version": FORMAT_VERSION,
+                         "news": {"sha256": news.get("sha256"), "projection_version": news.get("projection_version")},
+                         "sources": [{key: source[key] for key in ("name", "format", "format_version", "source_sha256", "selection_sha256")} for source in sources]})
+    if mode == "incremental":
+        limit = spec.get("incremental_replay_items", 256)
+        if type(limit) is not int or limit < 0:
+            raise ValueError("Auxiliary incremental_replay_items must be nonnegative")
+        indices = sorted(range(len(items)), key=lambda index: hashlib.sha256(f"{seed}:{version}:{items[index]['id'].removeprefix('aux:')}".encode()).digest())[:limit]
+        items, targets = [items[index] for index in indices], [targets[index] for index in indices]
+    selected = [item["id"].removeprefix("aux:") for item in items]
+    news_ids = set(news.get("source_ids", []))
+    for source in sources:
+        groups = dict(zip(source["source_ids"], source["group_ids"]))
+        source["available_items"] = source["items"]
+        source["source_ids"] = [source_id for source_id in selected if source_id in groups]
+        source["group_ids"] = [groups[source_id] for source_id in source["source_ids"]]
+        source["items"] = len(source["source_ids"])
+    return items, targets, {
+        "enabled": True, "sha256": revision, "projection_version": FORMAT_VERSION,
+        "mode": mode, "version": version, "seed": seed, "available_items": available, "items": len(items),
+        "selected_ids": [item["id"] for item in items], "source_ids": [item["id"].removeprefix("aux:") for item in items],
+        "group_ids": [item["story_id"].removeprefix("aux:") for item in items],
+        "news": {"sha256": news.get("sha256"), "projection_version": news.get("projection_version"),
+                 "available_items": news["items"], "items": sum(source_id in news_ids for source_id in selected)},
+        "sources": sources,
+        "target_semantics": "Human partial groups A+B, C, D+E, F; no invented five-level intensity labels",
     }
