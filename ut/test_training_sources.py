@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -20,6 +21,11 @@ class TrainingSourceTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
+        environment = patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+        # Keep service-container cache overrides out of these isolated fixtures.
+        os.environ.pop("MONITOR_DATA_DIR", None)
         self.root = Path(self.temporary.name)
         self.weather = self.root / "weather.csv"
         self.weather.write_text("id,tweet,s1,s2,s3,s4,s5,gold\n"
