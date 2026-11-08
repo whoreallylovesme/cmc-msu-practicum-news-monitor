@@ -28,7 +28,10 @@ class StudentLossTests(unittest.TestCase):
         expected = torch.tensor([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]], dtype=torch.float64)
         temperature = 10.0
         loss = neural._loss(logits, expected, torch.tensor([True]), temperature, torch)
-        reference = -torch.logsumexp(torch.log_softmax(logits / temperature, dim=-1)[0, :2], dim=-1) * temperature ** 2
+        # Match fp32 log probabilities and their promotion by the float64 targets.
+        reference = -torch.logsumexp(
+            torch.log_softmax(logits.float() / temperature, dim=-1)[0, :2], dim=-1,
+        ).to(expected.dtype) * temperature ** 2
         torch.testing.assert_close(loss, reference)
         actual_gradient, = torch.autograd.grad(loss, logits, retain_graph=True)
         reference_gradient, = torch.autograd.grad(reference, logits)
