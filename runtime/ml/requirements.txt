@@ -7,7 +7,6 @@ numpy==1.26.4
 scikit-learn==1.6.1
 PyYAML==6.0.3
 tokenizers==0.22.1
-torch==2.15.0
 transformers==4.57.6
 peft==0.21.2
 huggingface-hub==0.36.2

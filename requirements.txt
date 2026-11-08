@@ -1,3 +1,4 @@
+torch==2.15.0
 -r runtime/collector/requirements.txt
 -r runtime/storage/requirements.txt
 -r runtime/ml/requirements.txt

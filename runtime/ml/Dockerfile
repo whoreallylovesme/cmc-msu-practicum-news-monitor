@@ -14,7 +14,8 @@ RUN apt-get update \
 
 COPY runtime/ml/requirements.txt .
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
-RUN python -m pip install --no-cache-dir torch==2.15.0 --index-url ${TORCH_INDEX_URL} \
+ARG TORCH_VERSION=2.15.0
+RUN python -m pip install --no-cache-dir "torch==${TORCH_VERSION}" --index-url ${TORCH_INDEX_URL} \
     && python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
 COPY config.yaml ./config.yaml
