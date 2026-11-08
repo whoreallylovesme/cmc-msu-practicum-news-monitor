@@ -67,7 +67,7 @@ student_encoder:
   max_length: 512
   batch_size: 4
   gradient_accumulation: 4
-  epochs: 2
+  epochs: 1
   incremental_epochs: 1
   max_steps: null
   log_every_steps: 50
