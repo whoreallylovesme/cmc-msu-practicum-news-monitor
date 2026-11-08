@@ -11,7 +11,7 @@ from unittest.mock import patch
 import numpy as np
 import torch
 from tokenizers import Tokenizer, models, pre_tokenizers, processors
-from transformers import ModernBertConfig, ModernBertForMaskedLM, PreTrainedTokenizerFast
+from transformers import ModernBertConfig, ModernBertForMaskedLM, ModernBertForSequenceClassification, PreTrainedTokenizerFast
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,6 +137,39 @@ class StudentTests(unittest.TestCase):
         self.assertLess(float(logits.grad[0, 0]), 0)
         self.assertLess(float(logits.grad[0, 1]), 0)
         self.assertGreater(float(logits.grad[0, 5]), 0)
+
+    def test_two_class_base_preserves_encoder_and_head_with_six_class_output(self):
+        lora = {"rank": 2, "alpha": 4, "dropout": 0.0}
+        torch.manual_seed(42)
+        mlm, _, _ = neural._load(neural.prepare(self.config), lora)
+        initial_classifier = mlm.base_model.model.classifier.modules_to_save["default"].weight.detach().clone()
+        source = ModernBertForSequenceClassification(ModernBertConfig.from_pretrained(self.source, num_labels=2))
+        source.save_pretrained(self.source)
+        torch.manual_seed(42)
+        loaded, _, _ = neural._load(neural.prepare(self.config), lora)
+        core = loaded.base_model.model
+        self.assertEqual(core.classifier.modules_to_save["default"].out_features, 6)
+        torch.testing.assert_close(core.classifier.modules_to_save["default"].weight, initial_classifier)
+        for name, value in source.model.state_dict().items():
+            adapted = name.replace(".attn.Wqkv.", ".attn.Wqkv.base_layer.").replace(".attn.Wo.", ".attn.Wo.base_layer.")
+            torch.testing.assert_close(core.model.state_dict()[adapted], value)
+        head = core.head.modules_to_save["default"].state_dict()
+        for name, value in source.head.state_dict().items():
+            torch.testing.assert_close(head[name], value)
+
+    def test_nonclassifier_checkpoint_shape_mismatch_is_rejected(self):
+        from safetensors.torch import load_file, save_file
+
+        source = ModernBertForSequenceClassification(ModernBertConfig.from_pretrained(self.source, num_labels=2))
+        for name in ("head.dense.weight", "model.layers.0.attn.Wqkv.weight"):
+            with self.subTest(parameter=name):
+                source.save_pretrained(self.source)
+                filename = self.source / "model.safetensors"
+                weights = load_file(str(filename))
+                weights[name] = weights[name][:1].contiguous()
+                save_file(weights, str(filename), metadata={"format": "pt"})
+                with self.assertRaisesRegex(ValueError, "encoder and head must match"):
+                    neural._load(neural.prepare(self.config), {"rank": 2, "alpha": 4, "dropout": 0.0})
 
     def test_marginal_relevance_and_six_class_metrics_are_separate(self):
         distribution = [0.14, 0.14, 0.14, 0.14, 0.14, 0.3]

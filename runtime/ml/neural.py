@@ -110,10 +110,20 @@ def _load(bundle, lora, state=None):
     torch.set_num_threads(bundle["threads"])
     directory = _model_directory(bundle)
     tokenizer = AutoTokenizer.from_pretrained(directory, local_files_only=True, trust_remote_code=False)
-    model = AutoModelForSequenceClassification.from_pretrained(
+    model, loading = AutoModelForSequenceClassification.from_pretrained(
         directory, num_labels=len(CHOICES), local_files_only=True, trust_remote_code=False,
         use_safetensors=True, attn_implementation="sdpa", reference_compile=False,
+        ignore_mismatched_sizes=True, output_loading_info=True,
     )
+    classifier = {"classifier.weight", "classifier.bias"}
+    mismatched = set(loading["mismatched_keys"])
+    missing = set(loading["missing_keys"])
+    unexpected = set(loading["unexpected_keys"])
+    if (mismatched - classifier or missing - classifier
+            or unexpected - {"decoder.weight", "decoder.bias"} or loading.get("error_msgs")):
+        raise ValueError("Student checkpoint may only initialize or resize its output classifier; encoder and head must match")
+    if mismatched:
+        LOGGER.info("Initialized six-class output classifier from a checkpoint with a different label count")
     targets = [name for name, module in model.named_modules()
                if isinstance(module, torch.nn.Linear) and name.endswith((".attn.Wqkv", ".attn.Wo"))]
     if not targets:

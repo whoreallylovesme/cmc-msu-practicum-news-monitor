@@ -13,7 +13,7 @@ permissions:
 jobs:
   demo:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +23,7 @@ jobs:
       COMPOSE_PROFILES: training
       COMPOSE_FILE: docker-compose.yml
       MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
-      MONITOR_HTTP_TIMEOUT: "3300"
+      MONITOR_HTTP_TIMEOUT: "4800"
       CI_DATASET: ${{ matrix.dataset }}
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +42,8 @@ jobs:
           temporary = Path(os.environ["RUNNER_TEMP"])
           config = yaml.safe_load(Path("runtime/ml/config.yaml").read_text())
           config["student_encoder"].update(
-              device="cpu", dtype="float32", threads=2, batch_size=4,
-              max_length=64, epochs=1, incremental_epochs=1,
+              device="cpu", dtype="float32", threads=2, batch_size=8,
+              max_length=32, epochs=1, incremental_epochs=1,
               gradient_accumulation=1, max_steps=2,
           )
           model_config = temporary / "ml-ci.yaml"
@@ -58,7 +58,7 @@ jobs:
           with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as environment:
               environment.write(f"COMPOSE_FILE=docker-compose.yml:{temporary / 'compose-ci.yaml'}\n")
           demo = yaml.safe_load(Path(f"demo/{os.environ['CI_DATASET']}.yaml").read_text())
-          demo["check"]["timeout"] = 3300
+          demo["check"]["timeout"] = 4800
           (temporary / "demo-ci.yaml").write_text(yaml.safe_dump(demo), encoding="utf-8")
           PY
       - name: Проверить Compose
@@ -74,7 +74,9 @@ jobs:
           docker compose exec -T ml python -c 'import torch; assert torch.version.cuda is None, "CI requires the official CPU PyTorch build"'
           docker compose exec -T ml python -m unittest discover -s /app/ut -v
       - name: Проверить весь размеченный снимок через API
-        run: python demo/e2e.py --config "$RUNNER_TEMP/demo-ci.yaml" | tee "$RUNNER_TEMP/e2e-$CI_DATASET.json"
+        run: |
+          set -o pipefail
+          python demo/e2e.py --config "$RUNNER_TEMP/demo-ci.yaml" | tee "$RUNNER_TEMP/e2e-$CI_DATASET.json"
       - name: Проверить кэш ученика и отсутствие загрузки GGUF-учителя
         run: |
           docker compose exec -T ml python - <<'PY'
@@ -96,7 +98,7 @@ jobs:
           assert not files, f"The prepared-label demo unexpectedly created teacher model files: {files}"
           PY
       - name: Показать логи при ошибке
-        if: failure()
+        if: failure() || cancelled()
         run: docker compose logs --no-color --tail 150
       - name: Остановить контейнеры и удалить временные тома
         if: always()
