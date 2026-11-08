@@ -116,6 +116,66 @@ def fidelity(expected, actual):
     }
 
 
+def coarse_probabilities(probabilities):
+    values = np.stack([normalized_distribution(row) for row in probabilities])
+    return np.column_stack((values[:, :2].sum(axis=1), values[:, 2],
+                            values[:, 3:OFF_TOPIC].sum(axis=1), values[:, OFF_TOPIC]))
+
+
+def coarse_decisions(probabilities):
+    values = np.asarray(probabilities)
+    return np.where(values[:, 3] >= 0.5, 3, values[:, :3].argmax(axis=1))
+
+
+def coarse_fidelity(expected, actual):
+    if len(expected) != len(actual):
+        raise ValueError("Reference and prediction counts must match")
+    if not len(expected):
+        return {"kl_divergence": None, "class_agreement": None, "task": "three-polarities-and-relevance"}
+    target, observed = coarse_probabilities(expected), coarse_probabilities(actual)
+    divergence = np.sum(target * (np.log(np.clip(target, 1e-12, 1))
+                                  - np.log(np.clip(observed, 1e-12, 1))), axis=1).mean()
+    return {"kl_divergence": float(divergence),
+            "class_agreement": float(np.mean(coarse_decisions(target) == coarse_decisions(observed))),
+            "task": "three-polarities-and-relevance",
+            "reference": "Teacher silver agreement, not independent human accuracy"}
+
+
+def coarse_label_metrics(labels, probabilities):
+    labels = np.asarray(labels, dtype=np.int64)
+    if not len(labels) or len(labels) != len(probabilities) or ((labels < 0) | (labels >= 6)).any():
+        raise ValueError("Quality evaluation needs matching six-slot source labels")
+    values = coarse_probabilities(probabilities)
+    expected = np.asarray([0, 0, 1, 2, 2, 3])[labels]
+    observed = coarse_decisions(values)
+    relevant = expected != 3
+    accepted = observed != 3
+    present = sorted(set(expected.tolist()))
+    scored = relevant & accepted
+    scores = ((values[scored, 1] * 0.5 + values[scored, 2])
+              / values[scored, :3].sum(axis=1))
+    gold_scores = np.asarray([0, 0.5, 1])[expected[scored]]
+    return {
+        "items": len(labels), "task": "three-polarities-and-relevance", "score_scale": [0, 1],
+        "class_accuracy": float(accuracy_score(expected, observed)),
+        "class_macro_f1": float(f1_score(expected, observed, labels=[0, 1, 2, 3], average="macro", zero_division=0)) if len(present) == 4 else None,
+        "present_class_macro_f1": float(f1_score(expected, observed, labels=present, average="macro", zero_division=0)),
+        "confusion_matrix": confusion_matrix(expected, observed, labels=[0, 1, 2, 3]).tolist(),
+        "per_class": classification_report(expected, observed, labels=[0, 1, 2, 3],
+                                           target_names=["negative", "neutral", "positive", "irrelevant"],
+                                           zero_division=0, output_dict=True),
+        "relevance_accuracy": float(accuracy_score(relevant, accepted)),
+        "relevance_precision": float(precision_score(relevant, accepted, zero_division=0)),
+        "relevance_recall": float(recall_score(relevant, accepted, zero_division=0)),
+        "relevance_macro_f1": float(f1_score(relevant, accepted, labels=[False, True], average="macro", zero_division=0)) if len(set(relevant.tolist())) == 2 else None,
+        "sentiment_polarity_accuracy": float(accuracy_score(expected[relevant], observed[relevant])) if relevant.any() else None,
+        "sentiment_polarity_macro_f1": float(f1_score(expected[relevant], observed[relevant], labels=[0, 1, 2], average="macro", zero_division=0)) if all(label in expected for label in (0, 1, 2)) else None,
+        "score_mae": float(np.abs(scores - gold_scores).mean()) if scored.any() else None,
+        "scored_items": int(scored.sum()), "unscored_relevant_items": int((relevant & ~accepted).sum()),
+        "score_mae_scope": "Accepted true relevant comments; rejected comments remain classification errors",
+    }
+
+
 def label_metrics(labels, probabilities, statistic="mean"):
     labels = np.asarray(labels, dtype=np.int64)
     if len(labels) == 0 or len(labels) != len(probabilities) or ((labels < 0) | (labels >= len(CHOICES))).any():
@@ -175,12 +235,16 @@ def evaluate(artifact, items, teacher_probabilities=None):
         "student_ms_per_item": elapsed * 1000 / len(items) if items else None,
         "timing_note": "All comments run through the neural student; includes model loading on a cold process",
     }
+    coarse = artifact.get("probability_model") == "coarse-factorized"
     if teacher_probabilities is not None:
-        report["teacher_fidelity"] = fidelity(teacher_probabilities, probabilities)
+        report["teacher_fidelity"] = (coarse_fidelity if coarse else fidelity)(teacher_probabilities, probabilities)
     indices = [index for index, item in enumerate(items) if item.get("human_label") is not None]
     if indices:
         labels = [items[index]["human_label"] for index in indices]
-        report["human"] = label_metrics(labels, probabilities[indices], artifact.get("score_statistic", "mean"))
+        report["human"] = (coarse_label_metrics(labels, probabilities[indices]) if coarse else
+                           label_metrics(labels, probabilities[indices], artifact.get("score_statistic", "mean")))
         if teacher_probabilities is not None:
-            report["teacher_human"] = label_metrics(labels, [teacher_probabilities[index] for index in indices], artifact.get("score_statistic", "mean"))
+            teacher_values = [teacher_probabilities[index] for index in indices]
+            report["teacher_human"] = (coarse_label_metrics(labels, teacher_values) if coarse else
+                                      label_metrics(labels, teacher_values, artifact.get("score_statistic", "mean")))
     return report

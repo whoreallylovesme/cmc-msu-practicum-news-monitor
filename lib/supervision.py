@@ -69,6 +69,8 @@ def _load_news(config, mode="from_scratch", version=1, seed=42):
             "parent_text": row.get("parent_text") or "", "story_title": row.get("story_title") or "",
             "parent_id": None, "polarity_only": True,
         })
+        if config.get("student_encoder", {}).get("training_balance") is not None:
+            items[-1]["training_source"] = row.get("dataset") or "news"
         target = [0.0] * 6
         target[{"negative": 1, "neutral": 2, "positive": 3}[row["gold_polarity"]]] = 1.0
         targets.append(target)
@@ -113,6 +115,11 @@ def load_auxiliary(config, mode="from_scratch", version=1, seed=42):
         source["source_ids"] = [source_id for source_id in selected if source_id in groups]
         source["group_ids"] = [groups[source_id] for source_id in source["source_ids"]]
         source["items"] = len(source["source_ids"])
+    semantics = "Human partial groups A+B, C, D+E, F; no invented five-level intensity labels"
+    if any(source["format"] == "semeval_topic_five_point_zip" for source in sources):
+        semantics += "; SemEval retains its original human five-point A-E topic polarity"
+    if any(source["format"] == "canonical_supervision_jsonl" for source in sources):
+        semantics += "; canonical sources retain their provided label distributions and annotation origins"
     return items, targets, {
         "enabled": True, "sha256": revision, "projection_version": FORMAT_VERSION,
         "mode": mode, "version": version, "seed": seed, "available_items": available, "items": len(items),
@@ -121,5 +128,5 @@ def load_auxiliary(config, mode="from_scratch", version=1, seed=42):
         "news": {"sha256": news.get("sha256"), "projection_version": news.get("projection_version"),
                  "available_items": news["items"], "items": sum(source_id in news_ids for source_id in selected)},
         "sources": sources,
-        "target_semantics": "Human partial groups A+B, C, D+E, F; no invented five-level intensity labels",
+        "target_semantics": semantics,
     }

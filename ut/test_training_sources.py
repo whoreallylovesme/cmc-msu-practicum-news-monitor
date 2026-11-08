@@ -15,6 +15,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from lib.supervision import load_auxiliary
+from lib import training_sources
 
 
 class TrainingSourceTests(unittest.TestCase):
@@ -87,6 +88,113 @@ class TrainingSourceTests(unittest.TestCase):
         items, _, metadata = load_auxiliary(self.configured())
         self.assertEqual(len(items), 3)
         self.assertEqual(metadata["sources"][0]["skipped_uninformative_ids"], ["partly-sunny:3"])
+
+    def test_weather_class_uses_original_plurality_and_preserves_known_weight(self):
+        self.weather.write_text(self.weather.read_text()
+                                + "4,F plurality,0.1,0.2,0.2,0.14,0.36,SECRET\n")
+        self.sources["weather"]["asset"] = self.asset(self.weather)
+        self.sources["weather"]["items"] = [{"id": "partly-sunny:4", "group_id": "group:4"}]
+        soft_items, soft_targets, _ = load_auxiliary(self.configured())
+        self.assertAlmostEqual(soft_targets[0][5], .4)
+        self.sources["weather"]["target_mode"] = "class"
+        items, targets, metadata = load_auxiliary(self.configured())
+        self.assertEqual(items, soft_items)
+        self.assertEqual(targets[0], [0, 0, 0, 0, 0, 1])
+        self.assertAlmostEqual(items[0]["sample_weight"], .9)
+        self.assertEqual(metadata["sources"][0]["target_mode"], "class")
+        self.assertEqual(metadata["sources"][0]["format_version"], "selected-human-csv-class-v1")
+
+    def test_weather_class_skips_unknown_and_tied_original_winners(self):
+        self.weather.write_text(self.weather.read_text()
+                                + "5,Tied known votes,0,0.3,0.3,0.2,0.2,SECRET\n")
+        self.sources["weather"]["asset"] = self.asset(self.weather)
+        self.sources["weather"]["items"].extend([
+            {"id": "partly-sunny:5", "group_id": "group:5"},
+            {"id": "partly-sunny:3", "group_id": "group:3"},
+        ])
+        soft_items, _, soft_metadata = load_auxiliary(self.configured())
+        self.assertEqual(len(soft_items), 4)
+        self.assertEqual(soft_metadata["sources"][0]["skipped_uninformative_ids"], ["partly-sunny:3"])
+        self.sources["weather"]["target_mode"] = "class"
+        items, targets, metadata = load_auxiliary(self.configured())
+        self.assertEqual([item["id"] for item in items], ["aux:partly-sunny:1", "aux:airline:100:0"])
+        self.assertEqual(targets[0], [0, 0, 0, 1, 0, 0])
+        self.assertEqual(metadata["sources"][0]["skipped_uninformative_ids"],
+                         ["partly-sunny:2", "partly-sunny:5", "partly-sunny:3"])
+
+    def test_weather_target_mode_is_validated(self):
+        for target_mode in ("unknown", None, True):
+            with self.subTest(target_mode=target_mode):
+                self.sources["weather"]["target_mode"] = target_mode
+                with self.assertRaisesRegex(ValueError, "target_mode"):
+                    load_auxiliary(self.configured())
+
+    def test_mixed_weather_retains_uncertainty_and_the_human_F_decision(self):
+        self.weather.write_text(self.weather.read_text()
+                                + "4,F plurality,0.1,0.2,0.2,0.14,0.36,SECRET\n")
+        self.sources["weather"].update(
+            asset=self.asset(self.weather), target_mode="mixed", class_mix=0.5,
+            items=[{"id": "partly-sunny:4", "group_id": "group:4"}],
+        )
+        items, targets, metadata = load_auxiliary(self.configured())
+        self.assertGreater(targets[0][5], 0.5)
+        self.assertLess(targets[0][5], 1)
+        self.assertTrue(all(targets[0][index] > 0 for index in (1, 2, 3)))
+        self.assertEqual(targets[0][0], 0)
+        self.assertEqual(targets[0][4], 0)
+        self.assertAlmostEqual(sum(targets[0]), 1)
+        self.assertAlmostEqual(items[0]["sample_weight"], 0.9)
+        self.assertTrue(items[0]["partial_labels"])
+        self.assertEqual(items[0]["text"], "F plurality")
+        self.assertEqual(metadata["sources"][0]["class_mix"], 0.5)
+        self.assertEqual(metadata["sources"][0]["format_version"], "selected-human-csv-mixed-v1")
+
+    def test_mixed_weather_endpoints_and_invalid_coefficient(self):
+        row = {"tweet": "Raw weather", "s1": "0.1", "s2": "0.1", "s3": "0.2", "s4": "0.5", "s5": "0.1"}
+        selected = {"entity": "weather", "target_mode": "mixed"}
+        soft = training_sources._weather(row, {**selected, "target_mode": "distribution"})
+        hard = training_sources._weather(row, {**selected, "target_mode": "class"})
+        self.assertEqual(training_sources._weather(row, {**selected, "class_mix": 0}), soft)
+        self.assertEqual(training_sources._weather(row, {**selected, "class_mix": 1}), hard)
+        for invalid in (-0.1, 1.1, float("nan"), float("inf"), True, "0.5"):
+            with self.subTest(value=invalid):
+                with self.assertRaisesRegex(ValueError, "class_mix"):
+                    training_sources._weather(row, {**selected, "class_mix": invalid})
+
+    def test_balancing_source_tags_are_opt_in_and_leave_supervision_unchanged(self):
+        config = self.configured()
+        items, targets, metadata = load_auxiliary(config)
+        self.assertTrue(all("training_source" not in item for item in items))
+        config["student_encoder"] = {"training_balance": {}}
+        tagged, tagged_targets, tagged_metadata = load_auxiliary(config)
+        self.assertEqual([item["training_source"] for item in tagged], ["weather", "weather", "airline"])
+        self.assertEqual([{key: value for key, value in item.items() if key != "training_source"}
+                          for item in tagged], items)
+        self.assertEqual(tagged_targets, targets)
+        self.assertEqual(tagged_metadata, metadata)
+
+    def test_default_metadata_is_unchanged_and_class_mode_changes_revision(self):
+        config = self.configured()
+        _, _, before = load_auxiliary(config)
+        weather = before["sources"][0]
+        self.assertEqual(weather["format_version"], "selected-human-csv-v1")
+        self.assertNotIn("target_mode", weather)
+        self.assertEqual(set(weather), {"name", "format", "format_version", "source_sha256",
+                                       "source_size_bytes", "selection_sha256", "selection_size_bytes",
+                                       "source_ids", "group_ids", "skipped_uninformative_ids", "items",
+                                       "available_items"})
+        original_selection = training_sources._selection
+
+        def with_class_mode(path, name, format_name, source_sha):
+            selected = original_selection(path, name, format_name, source_sha)
+            return {**selected, "target_mode": "class"} if name == "weather" else selected
+
+        with patch.object(training_sources, "_selection", side_effect=with_class_mode):
+            _, _, after = load_auxiliary(config)
+        # The format revision is in the existing identity allowlist, even when
+        # descriptor bytes/SHA are identical in this controlled comparison.
+        self.assertEqual(after["sources"][0]["selection_sha256"], weather["selection_sha256"])
+        self.assertNotEqual(after["sha256"], before["sha256"])
 
     def test_nonfinite_or_negative_human_shares_are_rejected(self):
         for value in ("nan", "-0.1"):

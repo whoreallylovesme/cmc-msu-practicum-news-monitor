@@ -39,6 +39,78 @@ class StudentLossTests(unittest.TestCase):
         torch.testing.assert_close(expected, torch.tensor([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]], dtype=torch.float64))
 
 
+class StudentBalanceTests(unittest.TestCase):
+    def test_default_and_invalid_settings(self):
+        items, targets, partial = [{"id": "one"}], np.eye(6)[:1], np.asarray([False])
+        for settings in ({}, {"training_balance": None}):
+            weights, metadata = neural._balance_weights(items, targets, partial, settings)
+            np.testing.assert_array_equal(weights, np.ones(1, dtype=np.float32))
+            self.assertIsNone(metadata)
+        for spec in (False, {"exponent": float("nan")}, {"exponent": -1},
+                     {"max_class_weight": .5}, {"source_weights": {"primary": 0}}):
+            with self.subTest(spec=spec), self.assertRaises(ValueError):
+                neural._balance_weights(items, targets, partial, {"training_balance": spec})
+        for value in (-.1, 1, True, float("nan"), "0.1"):
+            with self.subTest(dropout=value), self.assertRaises(ValueError):
+                neural._dropout_overrides(value)
+        self.assertEqual(neural._dropout_overrides(None), {})
+
+    def test_partial_class_mass_has_inverse_sqrt_ratio_and_keeps_confidence_separate(self):
+        items = [{"id": str(i), "source": "weather", "sample_weight": .01 if i == 9 else 1}
+                 for i in range(10)]
+        targets = np.asarray([[.25, .75, 0, 0, 0, 0]] * 9 + [[0, 0, 0, 0, 0, 1]])
+        before = targets.copy()
+        weights, metadata = neural._balance_weights(items, targets, np.ones(10, dtype=bool),
+            {"training_balance": {"exponent": .5, "max_class_weight": 4}})
+        self.assertAlmostEqual(float(weights[-1] / weights[0]), 3, places=6)
+        self.assertAlmostEqual(float(weights.mean()), 1, places=6)
+        self.assertEqual(metadata["groups"][0]["class_mass"], [9, 0, 0, 1])
+        np.testing.assert_array_equal(targets, before)
+        changed = copy.deepcopy(items)
+        changed[-1]["sample_weight"] = 1
+        np.testing.assert_array_equal(neural._balance_weights(changed, targets, np.ones(10, dtype=bool),
+            {"training_balance": {}})[0], weights)
+
+    def test_soft_example_factor_is_linear_and_sources_normalize_independently(self):
+        items = [{"id": str(i), "training_source": "weather", "source": "ignored"} for i in range(5)]
+        targets = np.asarray([[0, 1, 0, 0, 0, 0]] * 3 +
+                             [[0, 0, 0, 0, 0, 1], [0, .5, 0, 0, 0, .5]])
+        items.append({"id": "air", "source": "airline"})
+        targets = np.vstack((targets, np.eye(6)[2]))
+        weights, metadata = neural._balance_weights(items, targets, np.ones(6, dtype=bool),
+            {"training_balance": {"source_weights": {"weather": 2, "airline": .5}, "max_class_weight": 1.1}})
+        self.assertAlmostEqual(float(weights[:5].mean()), 2, places=6)
+        self.assertAlmostEqual(float(weights[-1]), .5, places=6)
+        self.assertAlmostEqual(float(weights[4]), float((weights[0] + weights[3]) / 2), places=6)
+        self.assertTrue(all(max(group["class_factors"]) <= 1.1 for group in metadata["groups"]))
+        self.assertEqual(neural._examples(items, "ChatGPT", []), neural._examples(
+            [{key: value for key, value in row.items() if key not in {"training_source", "source"}} for row in items],
+            "ChatGPT", []))
+
+    def test_partial_and_full_labels_have_separate_class_masses(self):
+        targets = np.eye(6)[[0, 0, 1, 5, 0, 0, 1, 5]]
+        partial = np.asarray([True] * 4 + [False] * 4)
+        weights, metadata = neural._balance_weights([{"id": str(i)} for i in range(8)], targets, partial,
+                                                   {"training_balance": {}})
+        self.assertEqual(len(metadata["groups"]), 2)
+        self.assertAlmostEqual(float(weights[0]), float(weights[2]), places=6)
+        self.assertGreater(float(weights[6]), float(weights[4]))
+        self.assertAlmostEqual(float(weights.mean()), 1, places=6)
+
+    def test_balance_and_confidence_multiply_the_whole_example_gradient(self):
+        logits = torch.tensor([[1., 0, -1, 0, 0, 0], [0, 1, 0, -1, 0, 0]], requires_grad=True)
+        targets = torch.tensor([[0., 1, 0, 0, 0, 0], [0., 0, 0, 0, 0, 1]])
+        partial = torch.tensor([True, False])
+        confidence, balance = torch.tensor([.2, 1]), torch.tensor([3., .5])
+        loss = neural._loss(logits, targets, partial, 1, torch, confidence, balance)
+        individual = torch.stack([neural._loss(logits[i:i + 1], targets[i:i + 1], partial[i:i + 1], 1, torch)
+                                  for i in range(2)])
+        reference = (individual * confidence * balance).mean()
+        torch.testing.assert_close(loss, reference)
+        torch.testing.assert_close(torch.autograd.grad(loss, logits, retain_graph=True)[0],
+                                   torch.autograd.grad(reference, logits)[0])
+
+
 class StudentTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -107,6 +179,8 @@ class StudentTests(unittest.TestCase):
         self.assertEqual(artifact["training"]["optimizer"]["learning_rate"], 0.005)
         self.assertFalse(artifact["training"]["optimizer"]["state_restored"])
         self.assertNotIn("mention_policy", artifact)
+        self.assertNotIn("dropout", artifact["training"])
+        self.assertNotIn("training_balance", artifact["training"])
         self.assertTrue(all(isinstance(value, np.ndarray) for value in artifact["state"].values()))
         before = student.predict(artifact, self.items)
         np.testing.assert_allclose(before.sum(axis=1), np.ones(len(self.items)), atol=1e-6)
@@ -156,6 +230,40 @@ class StudentTests(unittest.TestCase):
         head = core.head.modules_to_save["default"].state_dict()
         for name, value in source.head.state_dict().items():
             torch.testing.assert_close(head[name], value)
+
+    def test_training_dropout_keeps_parameters_and_eval_predictions_unchanged(self):
+        bundle, lora = neural.prepare(self.config), {"rank": 2, "alpha": 4, "dropout": 0.0}
+        torch.manual_seed(42)
+        baseline, tokenizer, device = neural._load(bundle, lora)
+        torch.manual_seed(42)
+        regularized, _, _ = neural._load(bundle, lora, dropout=.2)
+        self.assertEqual(sum(p.numel() for p in baseline.parameters()), sum(p.numel() for p in regularized.parameters()))
+        self.assertTrue(all(p.dtype == torch.float32 for p in regularized.parameters()))
+        for name in ("embedding_dropout", "attention_dropout", "mlp_dropout", "classifier_dropout"):
+            self.assertEqual(getattr(regularized.config, name), .2)
+            self.assertEqual(getattr(baseline.config, name), 0)
+        for (name, value), (other_name, other) in zip(baseline.named_parameters(), regularized.named_parameters()):
+            self.assertEqual(name, other_name)
+            torch.testing.assert_close(value, other, rtol=0, atol=0)
+        batch = neural._batch(tokenizer, self.items, "ChatGPT", ["Chat GPT"], bundle, device)
+        baseline.eval()
+        regularized.eval()
+        with torch.inference_mode():
+            torch.testing.assert_close(baseline(**batch).logits, regularized(**batch).logits, rtol=0, atol=0)
+
+    def test_regularization_metadata_and_reload_keep_confidence_separate(self):
+        self.config["student_encoder"].update(dropout=.2, max_steps=1, training_balance={})
+        self.targets[0] = self.targets[1]
+        self.items[0]["sample_weight"] = .4
+        artifact, metrics = student.fit(self.items, self.targets, "encoder", self.config)
+        self.assertEqual(artifact["training"]["dropout"], .2)
+        self.assertEqual(metrics["training_balance"], artifact["training"]["training_balance"])
+        balance = metrics["training_balance"]
+        self.assertNotEqual(balance["weights"]["sha256"], balance["effective_weights"]["sha256"])
+        self.assertAlmostEqual(balance["confidence_weights"]["sum"], 5.4, places=6)
+        before = student.predict(artifact, self.items)
+        neural._RUNTIME = None
+        np.testing.assert_allclose(student.predict(artifact, self.items), before, atol=1e-6)
 
     def test_nonclassifier_checkpoint_shape_mismatch_is_rejected(self):
         from safetensors.torch import load_file, save_file

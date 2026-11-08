@@ -68,6 +68,20 @@ class SupervisionTests(unittest.TestCase):
         self.assertNotEqual(first[2]["selected_ids"], later[2]["selected_ids"])
         self.assertEqual(first[2]["available_items"], 20)
 
+    def test_source_tags_are_only_added_when_training_balance_is_enabled(self):
+        self.rows[0]["dataset"] = "newsmtsc_rw"
+        self.rows[1]["dataset"] = "mad_tsc"
+        config = self.configured()
+        items, targets, metadata = load_auxiliary(config)
+        config["student_encoder"] = {"training_balance": {}}
+        tagged, tagged_targets, tagged_metadata = load_auxiliary(config)
+        self.assertEqual([item["training_source"] for item in tagged[:3]],
+                         ["newsmtsc_rw", "mad_tsc", "news"])
+        self.assertEqual([{key: value for key, value in item.items() if key != "training_source"}
+                          for item in tagged], items)
+        self.assertEqual(tagged_targets, targets)
+        self.assertEqual(tagged_metadata, metadata)
+
     def test_changed_source_fails_its_checksum(self):
         config = self.configured()
         self.path.write_text(self.path.read_text() + "\n")

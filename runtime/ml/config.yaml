@@ -39,6 +39,7 @@ auxiliary_supervision:
         sha256: f11b6b560ea092aa04c36120466b1f3f6147111876fd557fb9f98e39856fc17c
         size_bytes: 1164226
 student_encoder:
+  probability_model: coarse-factorized
   model_weights:
     path: https://huggingface.co/MoritzLaurer/ModernBERT-large-zeroshot-v2.0/resolve/a51e07b524299e309dd2b88d48b0cfa2bd9ec598/model.safetensors
     is_local: false

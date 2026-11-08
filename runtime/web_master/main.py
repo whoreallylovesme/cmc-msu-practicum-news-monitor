@@ -1,5 +1,4 @@
 import logging
-import math
 import os
 import secrets
 from concurrent.futures import ThreadPoolExecutor
@@ -16,7 +15,7 @@ from starlette.concurrency import run_in_threadpool
 
 from lib.config import load_config, load_project_config
 from lib.contracts import Identifier, ProviderName
-from lib.sentiment import SCORE_MAX as MODEL_SCORE_MAX, SCORE_MIN as MODEL_SCORE_MIN
+from lib.sentiment import SCORE_MAX, SCORE_MIN
 
 
 CONFIG = load_config(Path(__file__).with_name("config.yaml"), env_var="MASTER_CONFIG")
@@ -43,11 +42,6 @@ MONITORING = {
     **PROJECT["monitoring"],
     "source": "hn_snapshot" if PROJECT["offline_demo"] else PROJECT["monitoring"]["source"],
 }
-SCORE_MIN = float(CONFIG["score_scale"]["min"])
-SCORE_MAX = float(CONFIG["score_scale"]["max"])
-if not math.isfinite(SCORE_MIN) or not math.isfinite(SCORE_MAX) or SCORE_MIN >= SCORE_MAX:
-    raise ValueError("score_scale must have a finite minimum below its maximum")
-SCORE_FACTOR = (SCORE_MAX - SCORE_MIN) / (MODEL_SCORE_MAX - MODEL_SCORE_MIN)
 SCORE_SCALE = {"min": SCORE_MIN, "max": SCORE_MAX}
 
 app = FastAPI(
@@ -121,29 +115,6 @@ def versioned_model(model_id: str, entity: str) -> dict:
 
 def prediction_key(model: dict) -> str:
     return f'{model["id"]}:{model["version"]}'
-
-
-def display_scores(result: dict) -> dict:
-    return {
-        **result,
-        "items": [
-            {**item, "score": SCORE_MIN + (item["score"] - MODEL_SCORE_MIN) * SCORE_FACTOR}
-            if item.get("score") is not None else item
-            for item in result["items"]
-        ],
-    }
-
-
-def display_metrics(value):
-    if isinstance(value, dict):
-        return {
-            name: number * SCORE_FACTOR if name == "score_mae" and number is not None
-            else display_metrics(number)
-            for name, number in value.items()
-        }
-    if isinstance(value, list):
-        return [display_metrics(item) for item in value]
-    return value
 
 
 class ImportRequest(BaseModel):
@@ -238,9 +209,7 @@ async def service_request(service: str, path: str, request: Request, current_rol
                 if name in response.headers}
     model_response = path == "models" or path.startswith(("models/", "jobs/"))
     if service == "ml" and model_response and not response.is_error:
-        payload = display_metrics(response.json())
-        if path.endswith("/predict"):
-            payload = display_scores(payload)
+        payload = response.json()
         return JSONResponse({**payload, "score_scale": SCORE_SCALE}, status_code=response.status_code)
     return Response(content=response.content, status_code=response.status_code, headers=outgoing)
 
@@ -319,13 +288,13 @@ def comments(
     """
     if model_id:
         model = versioned_model(model_id, entity)
-        return display_scores(upstream(
+        return upstream(
             "storage", "GET", "/predictions",
             params={
                 "entity": entity, "model_id": prediction_key(model),
                 "query": query, "from_date": from_date, "to_date": to_date, "limit": limit, "offset": offset,
             },
-        ))
+        )
     return upstream(
         "storage", "GET", "/comments",
         params={"entity": entity, "query": query, "from_date": from_date, "to_date": to_date,
@@ -387,17 +356,7 @@ def model_analytics(entity, model, bucket):
         },
     )
 
-    def scaled(counts):
-        if counts["score"] is None:
-            return counts
-        return {**counts, "score": SCORE_MIN + (counts["score"] - MODEL_SCORE_MIN) * SCORE_FACTOR}
-
-    return {
-        "summary": scaled(result["summary"]),
-        "periods": [scaled(period) for period in result["periods"]],
-        "sources": [scaled(source) for source in result["sources"]],
-        "score_scale": SCORE_SCALE,
-    }
+    return {**result, "score_scale": SCORE_SCALE}
 
 
 @app.get("/api/analytics", dependencies=[Depends(role)], tags=["Results"])

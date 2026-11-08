@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from lib.client import all_items, assert_status, call, monitoring_options, train_model, wait_job, wait_ready
 from lib.cli import configure_logging, load_cli_config, write_json
+from lib.sentiment import SCORE_MAX, SCORE_MIN
 
 
 DATASETS = {"1k": 1000, "10k": 10000}
@@ -103,7 +104,8 @@ def main(argv=None):
         args.training_limit = config["pipeline"]["training_limit"]
     if not expected_items <= args.training_limit <= 10000:
         raise ValueError(f"The complete dataset demo needs check.training_limit between {expected_items} and 10000")
-    scale = config.get("score_scale", {"min": 0, "max": 5})
+    scale = config.get("score_scale", {"min": SCORE_MIN, "max": SCORE_MAX})
+    assert scale == {"min": SCORE_MIN, "max": SCORE_MAX}, "The public score scale must be 0–1"
     batch_request = {"entity": entity, "source": source, "limit": args.batch_size}
     assert_status(args.url, 401, "/api/config", role=None)
     assert_status(args.url, 403, "/api/import", body=batch_request, role="viewer")
