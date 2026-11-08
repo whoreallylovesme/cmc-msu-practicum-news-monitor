@@ -10,27 +10,26 @@ incremental_holdout_items: 200
 validation_fraction: 0.2
 score_statistic: mean
 auxiliary_supervision:
-  # Включается после независимой проверки: demo/newsmtsc_train.jsonl.
-  path: null
+  path: demo/newsmtsc_train.jsonl
   sha256: 02f855eb74ab57c759f2f7e0dbb8e8310a1ca0a44eff4929dbb405204dc2e528
   incremental_replay_items: 256
 student_encoder:
   model_weights:
-    path: https://huggingface.co/answerdotai/ModernBERT-large/resolve/45bb4654a4d5aaff24dd11d4781fa46d39bf8c13/model.safetensors
+    path: https://huggingface.co/MoritzLaurer/ModernBERT-large-zeroshot-v2.0/resolve/a51e07b524299e309dd2b88d48b0cfa2bd9ec598/model.safetensors
     is_local: false
-    sha256: 44510fec5d3a81a1877f225637b869495f18e55f6f23a09abb9be0acc030295f
-    size_bytes: 1583544840
+    sha256: 9e88e3ba0721cee770645d262f10dbe8125ed592ff349b7ba2eedaaded97230a
+    size_bytes: 791684972
   # Пути берутся рядом с model_weights; для другого расположения задайте path/is_local.
   companion_assets:
     config.json:
-      sha256: 55dca68059e98f0debf8eb63ab355c451c65b1f5d90fdca4754113fdaadd2cca
-      size_bytes: 1194
+      sha256: ababd87e19a2c783e08495996e5e32e7d6661ea66686ba41fd02f9e7d46d547f
+      size_bytes: 1471
     tokenizer.json:
-      sha256: 9fd55248d51d33976b324fc11592e28071da7d41e0e9401dfb7082e30574b7b1
-      size_bytes: 2132967
+      sha256: 6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30
+      size_bytes: 3583228
     tokenizer_config.json:
-      sha256: 3cd2017ff46d0a527e5d39cae39272eccfa1f19bb9f89b05d166aab2e38354e2
-      size_bytes: 20810
+      sha256: c5a7dfd44d93c5d7ed9b2ddcd7a6018e935ec7d53f1de45910ea9868e0ff1c17
+      size_bytes: 20839
     special_tokens_map.json:
       sha256: ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049
       size_bytes: 694
@@ -43,7 +42,7 @@ student_encoder:
   max_length: 512
   batch_size: 4
   gradient_accumulation: 4
-  epochs: 3
+  epochs: 2
   incremental_epochs: 1
   max_steps: null
   log_every_steps: 50
