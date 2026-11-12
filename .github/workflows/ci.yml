@@ -76,6 +76,7 @@ jobs:
           docker cp runtime/teacher "$container:/app/runtime/teacher"
           docker cp demo/e2e.py "$container:/app/demo/e2e.py"
           docker cp demo/quality "$container:/app/demo/quality"
+          docker compose exec -T ml python -m pip install --no-cache-dir -r /app/runtime/web_master/requirements.txt -r /app/runtime/visualization/requirements.txt
           docker compose exec -T ml python -c 'import torch; assert torch.version.cuda is None, "CI requires the official CPU PyTorch build"'
           docker compose exec -T ml python -m unittest discover -s /app/ut -v
       - name: Проверить весь размеченный снимок через API
