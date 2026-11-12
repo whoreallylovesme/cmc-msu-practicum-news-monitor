@@ -160,7 +160,8 @@ def _canonical_source(spec, config, cache):
         items.append({"id": "aux:" + row["id"], "story_id": "aux:" + row["group_id"],
                       "entity": row["entity"], "text": row["text"], "parent_text": parent,
                       "story_title": title, "parent_id": row.get("parent_id"),
-                      "partial_labels": row["partial_labels"], "sample_weight": weight})
+                      "partial_labels": row["partial_labels"], "sample_weight": weight,
+                      "relevance_only": row.get("relevance_only", False)})
         if config.get("student_encoder", {}).get("training_balance") is not None:
             items[-1]["training_source"] = spec["name"]
         targets.append(values)

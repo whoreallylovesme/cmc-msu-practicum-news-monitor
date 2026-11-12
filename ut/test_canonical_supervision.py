@@ -29,7 +29,7 @@ class CanonicalSupervisionTests(unittest.TestCase):
         self.rows = [
             {"id": "human:1", "group_id": "article:1", "entity": "Acme",
              "text": "Raw current paragraph.", "parent_text": "Original complete article.",
-             "story_title": "Original title", "split": "train", "partial_labels": True,
+             "story_title": "Original title", "split": "train", "partial_labels": True, "relevance_only": True,
              "sample_weight": 0.8, "label_probabilities": [0, 0, 0, 1, 0, 0],
              "gold_polarity": "positive", "original_document_label": "negative"},
             {"id": "silver:2", "group_id": "thread:2", "entity": "Acme",
@@ -60,6 +60,8 @@ class CanonicalSupervisionTests(unittest.TestCase):
         self.assertEqual(items[0]["story_id"], "aux:article:1")
         self.assertTrue(items[0]["partial_labels"])
         self.assertFalse(items[1]["partial_labels"])
+        self.assertTrue(items[0]["relevance_only"])
+        self.assertFalse(items[1]["relevance_only"])
         self.assertEqual(items[0]["sample_weight"], 0.8)
         self.assertNotIn("gold_polarity", items[0])
         self.assertNotIn("original_document_label", items[0])

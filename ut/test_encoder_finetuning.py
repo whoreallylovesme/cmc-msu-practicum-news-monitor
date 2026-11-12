@@ -188,3 +188,21 @@ class EncoderFinetuningTests(unittest.TestCase):
         self.assertTrue(metrics["base_encoder_frozen"])
         self.assertEqual(metrics["encoder_override_bytes"], 0)
         self.assertFalse((Path(self.config["data_dir"]) / "encoder-checkpoints").exists())
+
+    def test_head_only_training_disables_lora(self):
+        self.config["student_encoder"].update(unfreeze_last_n_layers=0, train_lora=False)
+        _, metrics = self.fit()
+        live = neural._RUNTIME[1]
+        lora = [(name, parameter) for name, parameter in live.named_parameters() if ".lora_" in name]
+        self.assertTrue(lora)
+        self.assertTrue(all(not parameter.requires_grad for _, parameter in lora))
+        head = [(name, parameter) for name, parameter in live.named_parameters()
+                if ".modules_to_save." in name]
+        self.assertTrue(head)
+        self.assertTrue(all(parameter.requires_grad for _, parameter in head))
+        self.assertEqual(metrics["trainable_parameters"], sum(parameter.numel() for _, parameter in head))
+        self.assertTrue(metrics["base_encoder_frozen"])
+        self.assertEqual(metrics["encoder_trainable_parameters"], 0)
+        self.config["student_encoder"]["train_lora"] = "invalid"
+        with self.assertRaisesRegex(ValueError, "train_lora"):
+            self.fit()

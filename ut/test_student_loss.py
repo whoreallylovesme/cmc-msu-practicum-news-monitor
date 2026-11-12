@@ -83,7 +83,7 @@ class PartialLossTests(unittest.TestCase):
         votes /= votes.sum()
         items = [{"partial_labels": True, "sample_weight": 1 - votes[0]}, {"polarity_only": True}, {}]
         targets = [[0., votes[1], votes[2], votes[3], 0., votes[4]], [0., 1., 0., 0., 0., 0.], [0., 0., 0., 0., 0., 1.]]
-        values, partial, weights = neural._training_targets(items, targets)
+        values, partial, weights, relevance_only = neural._training_targets(items, targets)
         np.testing.assert_allclose(values[0], [0., .125, .25, .125, 0., .5])
         np.testing.assert_array_equal(partial, [True, True, False])
         np.testing.assert_allclose(weights, [.8, 1., 1.])
@@ -94,6 +94,37 @@ class PartialLossTests(unittest.TestCase):
         for value in (0., -1., 1.01, 1.000000001, float("nan"), float("inf"), None):
             with self.subTest(weight=value), self.assertRaises(ValueError):
                 neural._training_targets([{"sample_weight": value}], [[0., 0., 0., 0., 0., 1.]])
+
+    def test_relevance_only_loss_ignores_polarity_distribution(self):
+        logits = torch.zeros((2, 6), requires_grad=True)
+        expected = torch.tensor([[.7, .1, .1, .1, 0., 0.], [0., .1, .1, .1, .7, 0.]])
+        relevant = torch.tensor([True, True])
+        actual = neural._loss(logits, expected, torch.tensor([False, False]), 1., torch,
+                              relevance_only=relevant)
+        reference = -torch.log(torch.tensor(5 / 6)).expand(2).mean()
+        torch.testing.assert_close(actual, reference)
+        gradient, = torch.autograd.grad(actual, logits)
+        expected_gradient = torch.tensor([[-1 / 60] * 5 + [1 / 12]]).expand(2, 6)
+        torch.testing.assert_close(gradient, expected_gradient)
+
+    def test_relevance_only_false_preserves_the_existing_joint_loss(self):
+        logits = torch.tensor([[1., 2., 0., -2., -3., -4.]], requires_grad=True)
+        expected = torch.tensor([[0., .6, .1, .3, 0., 0.]])
+        partial = torch.tensor([True])
+        ordinary = neural._loss(logits, expected, partial, 1., torch)
+        explicit = neural._loss(logits, expected, partial, 1., torch,
+                                relevance_only=torch.tensor([False]))
+        torch.testing.assert_close(ordinary, explicit)
+
+    def test_relevance_only_targets_are_explicit_and_cannot_conflict(self):
+        values, partial, weights, relevance_only = neural._training_targets(
+            [{"relevance_only": True}, {}], [[0., 0., 0., 0., 0., 1.], [1., 0., 0., 0., 0., 0.]])
+        np.testing.assert_array_equal(partial, [False, False])
+        np.testing.assert_allclose(weights, [1., 1.])
+        np.testing.assert_array_equal(relevance_only, [True, False])
+        with self.assertRaises(ValueError):
+            neural._training_targets(
+                [{"relevance_only": True, "partial_labels": True}], [[1., 0., 0., 0., 0., 0.]])
 
     def test_supervision_flags_and_weights_do_not_enter_model_inputs(self):
         item = {"text": "The weather is pleasant.", "entity": "weather conditions", "parent_text": "", "story_title": ""}

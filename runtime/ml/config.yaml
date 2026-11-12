@@ -81,6 +81,7 @@ student_encoder:
   lora_rank: 8
   lora_alpha: 16
   lora_dropout: 0.05
+  train_lora: true
   distillation_temperature: 1.0
   gradient_checkpointing: false
   seed: 42

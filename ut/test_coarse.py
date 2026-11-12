@@ -37,13 +37,13 @@ class CoarseMathTests(unittest.TestCase):
         items = [{"id": "teacher"}, {"id": "human", "partial_labels": True, "sample_weight": .3}]
         targets = np.asarray([[.1, .2, .15, .05, .1, .4], [0, 1, 0, 0, 0, 0]], dtype=np.float32)
         before = targets.copy()
-        actual, partial, confidence = neural._training_targets(items, targets, MODE)
+        actual, partial, confidence, relevance_only = neural._training_targets(items, targets, MODE)
         self.assertEqual(actual.dtype, np.float32)
         np.testing.assert_allclose(actual, [[.3, .15, .15, .4], [1, 0, 0, 0]], atol=1e-7)
         np.testing.assert_array_equal(partial, [False, False])
         np.testing.assert_allclose(confidence, [1, .3], atol=1e-7)
         np.testing.assert_array_equal(targets, before)
-        old, old_partial, _ = neural._training_targets(items, targets)
+        old, old_partial, _, _ = neural._training_targets(items, targets)
         self.assertEqual(old.shape, (2, 6))
         np.testing.assert_array_equal(old_partial, [False, True])
 

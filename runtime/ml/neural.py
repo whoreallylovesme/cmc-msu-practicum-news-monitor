@@ -318,7 +318,7 @@ def _log_probabilities(logits, torch, probability_model="flat", temperature=1.0)
 
 
 def _loss(logits, expected, partial, temperature, torch, sample_weight=None, balance_weight=None,
-          probability_model="flat"):
+          probability_model="flat", relevance_only=None):
     log_probabilities = _log_probabilities(logits, torch, probability_model, temperature)
     if temperature != 1.0:
         expected = expected.pow(1.0 / temperature)
@@ -333,6 +333,12 @@ def _loss(logits, expected, partial, temperature, torch, sample_weight=None, bal
                                  expected[:, 3:OFF_TOPIC].sum(dim=-1), expected[:, OFF_TOPIC]], dim=-1)
         marginal = torch.nn.functional.kl_div(grouped, reference, reduction="none").sum(dim=-1)
         losses = torch.where(partial, marginal, losses)
+    if relevance_only is not None and relevance_only.any():
+        log_relevant = torch.logsumexp(log_probabilities[:, :OFF_TOPIC], dim=-1)
+        log_off_topic = log_probabilities[:, OFF_TOPIC]
+        expected_off_topic = expected[:, OFF_TOPIC]
+        binary = -(expected_off_topic * log_off_topic + (1 - expected_off_topic) * log_relevant)
+        losses = torch.where(relevance_only, binary, losses)
     if sample_weight is not None:
         # Confidence scales each example's contribution; it is not cancelled
         # by renormalizing a low-confidence minibatch to unit total weight.
@@ -351,6 +357,11 @@ def _training_targets(items, targets, probability_model="flat"):
     # Older NewsMTSC inputs use polarity_only; their F mass is zero and their
     # three-polarity objective is unchanged by the extra zero-mass group.
     partial = np.asarray([bool(item.get("partial_labels", item.get("polarity_only", False))) for item in items])
+    relevance_only = np.asarray([bool(item.get("relevance_only", False)) for item in items])
+    if (partial & relevance_only).any():
+        raise ValueError("relevance_only cannot be combined with partial polarity labels")
+    if relevance_only.any() and probability_model != "flat":
+        raise ValueError("relevance_only currently requires the flat probability model")
     if probability_model == "coarse-factorized":
         targets = np.column_stack((targets[:, :2].sum(axis=1), targets[:, 2],
                                    targets[:, 3:OFF_TOPIC].sum(axis=1), targets[:, OFF_TOPIC]))
@@ -363,7 +374,7 @@ def _training_targets(items, targets, probability_model="flat"):
     weights = weights.astype(np.float32)
     if (weights <= 0).any():
         raise ValueError("sample_weight must remain positive at float32 precision")
-    return targets, partial, weights
+    return targets, partial, weights, relevance_only
 
 
 def _weight_summary(values):
@@ -486,7 +497,7 @@ def fit(items, targets, config, prior=None, on_epoch=None):
     entity = str(config.get("entity") or "").strip()
     aliases = list(config.get("aliases", []))
     probability_model = _probability_model(settings.get("probability_model", "flat"))
-    targets, partial, sample_weights = _training_targets(items, targets, probability_model)
+    targets, partial, sample_weights, relevance_only = _training_targets(items, targets, probability_model)
     dropout = settings.get("dropout")
     _dropout_overrides(dropout)
     balance_weights, balance_metadata = _balance_weights(items, targets, partial, settings)
@@ -511,9 +522,12 @@ def fit(items, targets, config, prior=None, on_epoch=None):
     if epochs < 1 or accumulation < 1 or not np.isfinite(temperature) or temperature <= 0:
         raise ValueError("Student epochs, accumulation and distillation temperature must be positive")
     unfreeze = settings.get("unfreeze_last_n_layers", 0)
+    train_lora = settings.get("train_lora", True)
     amp_dtype = settings.get("amp_dtype")
     if type(unfreeze) is not int or unfreeze < 0:
         raise ValueError("unfreeze_last_n_layers must be a nonnegative integer")
+    if type(train_lora) is not bool:
+        raise ValueError("train_lora must be a boolean")
     if amp_dtype not in {None, "bfloat16"} or amp_dtype is not None and bundle["dtype"] != "float32":
         raise ValueError("amp_dtype must be null or bfloat16 with float32 model parameters")
     started = time.perf_counter()
@@ -531,6 +545,10 @@ def fit(items, targets, config, prior=None, on_epoch=None):
         model, tokenizer, device = _load(bundle, lora, prior["state"] if prior is not None else None,
                                          encoder_state=encoder_state, unfreeze_last_n_layers=unfreeze, dropout=dropout,
                                          probability_model=probability_model)
+        if not train_lora:
+            for name, parameter in model.named_parameters():
+                if ".lora_" in name:
+                    parameter.requires_grad_(False)
         device_type = torch.device(device).type
         if amp_dtype is not None and (device_type not in {"cpu", "cuda"}
                                       or device_type == "cuda" and not torch.cuda.is_bf16_supported()):
@@ -576,8 +594,9 @@ def fit(items, targets, config, prior=None, on_epoch=None):
                     selected_weights = torch.as_tensor(sample_weights[selected], device=device, dtype=torch.float32)
                     selected_balance = (torch.as_tensor(balance_weights[selected], device=device, dtype=torch.float32)
                                         if balance_metadata is not None else None)
+                    selected_relevance_only = torch.as_tensor(relevance_only[selected], device=device, dtype=torch.bool)
                     loss = _loss(logits, expected, selected_partial, temperature, torch, selected_weights, selected_balance,
-                                 probability_model)
+                                 probability_model, selected_relevance_only)
                 if not torch.isfinite(loss):
                     raise ValueError("Student training produced a non-finite loss")
                 # Weight a short final batch by its actual number of examples.
@@ -613,6 +632,7 @@ def fit(items, targets, config, prior=None, on_epoch=None):
                         "sample_weight_sum": float(sample_weights.sum()),
                         "sample_weighted_items": int((sample_weights != 1).sum()),
                         "partial_label_items": int(partial.sum()),
+                        "relevance_only_items": int(relevance_only.sum()),
                         "gradient_checkpointing": bool(settings.get("gradient_checkpointing", False)),
                         "unfreeze_last_n_layers": unfreeze,
                         "unfrozen_encoder_layers": sorted({_encoder_layer(name) for name in unfrozen}),
@@ -668,6 +688,7 @@ def fit(items, targets, config, prior=None, on_epoch=None):
             "elapsed_seconds": time.perf_counter() - started, "device": device,
             "optimizer": copy.deepcopy(training["optimizer"]),
             "partial_label_items": int(partial.sum()),
+            "relevance_only_items": int(relevance_only.sum()),
             "polarity_only_items": sum(bool(item.get("polarity_only")) for item in items),
             "sample_weight_sum": float(sample_weights.sum()),
             "sample_weighted_items": int((sample_weights != 1).sum()),
