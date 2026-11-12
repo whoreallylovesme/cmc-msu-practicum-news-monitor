@@ -1,0 +1,21 @@
+operation: prepare
+teacher_config: runtime/teacher/config.yaml
+student:
+  registry_path: .local-data/demo-10k/ml/model-registry.sqlite3
+  model_id: null
+  version: null
+  entity: ChatGPT
+  device: auto
+  cache_dir: .local-data/demo-10k/ml/encoder-weights
+data_dir: .local-data/quality/benchmarks
+output_dir: .local-data/quality/results
+datasets:
+  - newsmtsc_rw
+  - weather_sentiment
+split: dev
+mark_target: true
+bootstrap_samples: 1000
+snapshot_path: demo/hn_10k.json
+subset_path: demo/hn_1k.json
+entity: null
+aliases: null

@@ -17,27 +17,17 @@ ProviderName = Annotated[
 ]
 
 
-class MentionMatchingConfig(BaseModel):
-    allow_typos: bool = True
-    allow_context: bool = True
-    context_hints: list[
-        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
-    ] = Field(default_factory=list, max_length=20)
-
-
 class MonitoringConfig(BaseModel):
     query: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     aliases: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]] = Field(
         default_factory=list, max_length=10
     )
     source: ProviderName
-    matching: MentionMatchingConfig = Field(default_factory=MentionMatchingConfig)
 
 
 class PipelineConfig(BaseModel):
     model_id: Optional[Identifier] = None
-    model_kind: Literal["semantic", "softmax", "hard_label", "tiny_mlp"] = "hard_label"
-    teacher: Literal["dataset", "service", "live"] = "dataset"
+    teacher: Literal["dataset", "service"] = "dataset"
     training_limit: int = Field(default=10000, ge=4, le=10000)
 
 

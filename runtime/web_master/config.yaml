@@ -8,6 +8,7 @@ timeouts:
   default: 8
   collector: 120
   ml: 180
+  teacher: 3600
 local_accounts:
   admin:
     username: admin
@@ -15,6 +16,3 @@ local_accounts:
   viewer:
     username: viewer
     password: viewer-demo
-score_scale:
-  min: 0
-  max: 5

@@ -110,13 +110,12 @@ def create_dashboard(master_url, timeout, settings=None):
             pipeline = config.get("pipeline", {})
             models = master("/services/ml/models", {"entity": entity})["items"]
             model_id = pipeline.get("model_id")
-            kind = pipeline.get("model_kind", "hard_label")
             if model_id:
                 model = next((row for row in models if row["id"] == model_id), None)
-                if model is None or model["kind"] != kind or model["entity"].casefold() != entity.casefold() or model.get("version") is None:
+                if model is None or model["entity"].casefold() != entity.casefold() or model.get("version") is None:
                     raise RuntimeError(UNAVAILABLE)
             else:
-                model = max((row for row in models if row["kind"] == kind and row.get("version") is not None),
+                model = max((row for row in models if row.get("version") is not None),
                             key=lambda row: row.get("updated_at", ""), default=None)
             params = {"entity": entity, "bucket": bucket}
             if model:

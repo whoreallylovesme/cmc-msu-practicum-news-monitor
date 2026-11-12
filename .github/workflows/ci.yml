@@ -1,12 +1,12 @@
-name: Snapshot demo
+name: Проверка демонстрации
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 concurrency:
-  group: snapshot-demo-${{ github.event.pull_request.number || github.ref }}
+  group: snapshot-demo-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -15,40 +15,97 @@ permissions:
 jobs:
   demo:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         dataset: [1k, 10k]
     env:
+      COMPOSE_PROJECT_NAME: hn-ci-${{ matrix.dataset }}
+      COMPOSE_PROFILES: training
+      COMPOSE_FILE: docker-compose.yml
       MONITOR_DATASET_PATH: demo/hn_${{ matrix.dataset }}.json
+      CI_DATASET: ${{ matrix.dataset }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install demo configuration reader
-        run: python3 -m pip install -r demo/requirements.txt
-      - name: Validate Compose
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Установить зависимости запуска
+        run: python -m pip install -r demo/requirements.txt
+      - name: Подготовить временный конфиг проверки контрактов
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import yaml
+
+          temporary = Path(os.environ["RUNNER_TEMP"])
+          config = yaml.safe_load(Path("runtime/ml/config.yaml").read_text())
+          config["student_encoder"].update(
+              device="cpu", dtype="float32", threads=2, batch_size=8,
+              max_length=32, epochs=1, incremental_epochs=1,
+              gradient_accumulation=1, max_steps=2,
+          )
+          model_config = temporary / "ml-ci.yaml"
+          model_config.write_text(yaml.safe_dump(config, allow_unicode=True), encoding="utf-8")
+          override = {"services": {"ml": {
+              "build": {"args": {"TORCH_INDEX_URL": "https://download.pytorch.org/whl/cpu"}},
+              "environment": {"ML_CONFIG": "/app/runtime/ml/ci-config.yaml"},
+              "volumes": [{"type": "bind", "source": str(model_config),
+                           "target": "/app/runtime/ml/ci-config.yaml", "read_only": True}],
+          }}}
+          (temporary / "compose-ci.yaml").write_text(yaml.safe_dump(override), encoding="utf-8")
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as environment:
+              environment.write(f"COMPOSE_FILE=docker-compose.yml:{temporary / 'compose-ci.yaml'}\n")
+          demo = yaml.safe_load(Path(f"demo/{os.environ['CI_DATASET']}.yaml").read_text())
+          demo["check"]["timeout"] = 4800
+          (temporary / "demo-ci.yaml").write_text(yaml.safe_dump(demo), encoding="utf-8")
+          PY
+      - name: Проверить Compose
         run: docker compose config --quiet
-      - name: Start the five services
+      - name: Собрать и запустить шесть сервисов
         run: docker compose up --build --wait
-      - name: Run the snapshot E2E
-        run: python3 demo/e2e.py --config demo/${{ matrix.dataset }}.yaml
-      - name: Verify the demo did not fetch NN weights
+      - name: Проверить CPU PyTorch и модульные тесты
+        run: |
+          container=$(docker compose ps -q ml)
+          docker cp ut "$container:/app/ut"
+          docker cp runtime/storage "$container:/app/runtime/storage"
+          docker cp runtime/web_master "$container:/app/runtime/web_master"
+          docker cp runtime/visualization "$container:/app/runtime/visualization"
+          docker cp runtime/teacher "$container:/app/runtime/teacher"
+          docker cp demo/e2e.py "$container:/app/demo/e2e.py"
+          docker cp demo/quality "$container:/app/demo/quality"
+          docker compose exec -T -e HOME=/tmp ml python -m pip install --no-cache-dir -r /app/runtime/web_master/requirements.txt -r /app/runtime/visualization/requirements.txt
+          docker compose exec -T ml python -c 'import torch; assert torch.version.cuda is None, "CI requires the official CPU PyTorch build"'
+          docker compose exec -T -e HOME=/tmp ml python -m unittest discover -s /app/ut -v
+      - name: Проверить весь размеченный снимок через API
+        run: |
+          set -o pipefail
+          python demo/e2e.py --config "$RUNNER_TEMP/demo-ci.yaml" | tee "$RUNNER_TEMP/e2e-$CI_DATASET.json"
+      - name: Проверить кэш ученика и отсутствие загрузки GGUF-учителя
         run: |
           docker compose exec -T ml python - <<'PY'
           from pathlib import Path
-          import logging
-          from lib.cli import configure_logging
-          configure_logging()
-          roots = [Path("/models"), Path("/opt/news-models")]
-          weights = [str(path) for root in roots if root.exists() for path in root.rglob("*")
-                     if path.is_file() and path.suffix.lower() in {".onnx", ".gguf"}]
-          if weights:
-              raise SystemExit(f"Unexpected NN weights in the default demo cache: {weights}")
-          logging.getLogger("ci").info("Default dataset demo used no ONNX/GGUF cache files")
+          root = Path("/opt/news-models")
+          weights = [path for path in root.rglob("*.safetensors") if path.is_file()]
+          assert weights, "The neural student did not cache its required weights"
+          assert not list(root.rglob("*.gguf")), "The student unexpectedly downloaded a GGUF teacher"
           PY
-      - name: Print logs on failure
-        if: failure()
-        run: docker compose logs --no-color
-      - name: Stop containers
+          docker compose exec -T teacher python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.request import urlopen
+          with urlopen("http://127.0.0.1:8000/metadata", timeout=10) as response:
+              metadata = json.load(response)
+          assert metadata["classes"] == list("ABCDEF")
+          assert metadata["model_loaded"] is False, "The prepared-label demo unexpectedly loaded the teacher"
+          files = [path for path in Path("/models").rglob("*") if path.is_file()]
+          assert not files, f"The prepared-label demo unexpectedly created teacher model files: {files}"
+          PY
+      - name: Показать логи при ошибке
+        if: failure() || cancelled()
+        run: docker compose logs --no-color --tail 150
+      - name: Остановить контейнеры и удалить временные тома
         if: always()
-        run: docker compose down -v
+        run: docker compose down -v --remove-orphans

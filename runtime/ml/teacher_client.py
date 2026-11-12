@@ -22,14 +22,14 @@ class TeacherService:
         response.raise_for_status()
         return response.json()
 
-    def label(self, entity, items, aliases=(), matching=None):
+    def label(self, entity, items, aliases=()):
         request = TeacherRequest.model_validate({
-            "entity": entity, "aliases": list(aliases), "matching": matching or {}, "items": items,
+            "entity": entity, "aliases": list(aliases), "items": items,
         })
         response = TeacherResponse.model_validate(self._request("POST", "/label", request.model_dump()))
         if response.revision != self.revision:
             raise ValueError("Teacher revision changed during training; retry with one pinned revision")
-        expected = {item.id: input_hash(entity, item, aliases, matching) for item in request.items}
+        expected = {item.id: input_hash(entity, item, aliases) for item in request.items}
         if len(response.items) != len(expected) or len({item.comment_id for item in response.items}) != len(expected):
             raise ValueError("Teacher response must contain each requested comment exactly once")
         if any(expected.get(item.comment_id) != item.input_hash for item in response.items):

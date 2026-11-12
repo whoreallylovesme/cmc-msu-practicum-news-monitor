@@ -1,0 +1,53 @@
+dataset: NewsMTSC
+file: newsmtsc_train.jsonl
+rows: 6322
+size_bytes: 3552200
+sha256: 02f855eb74ab57c759f2f7e0dbb8e8310a1ca0a44eff4929dbb405204dc2e528
+purpose: Дополнительное обучение одной модели ученика на человеческой тональности относительно указанной сущности;
+  это обучающие данные, а не результат прогона.
+authors:
+- Felix Hamborg
+- Karsten Donnay
+paper: https://aclanthology.org/2021.eacl-main.142/
+license: MIT
+license_evidence: https://huggingface.co/datasets/fhamborg/news_sentiment_newsmtsc
+source:
+  repository: https://github.com/fhamborg/NewsMTSC
+  revision: 6b838e00f54423c253806327a0ae24dbffa24c9e
+  raw_train_url: https://raw.githubusercontent.com/fhamborg/NewsMTSC/6b838e00f54423c253806327a0ae24dbffa24c9e/NewsSentiment/experiments/default/datasets/newsmtsc-rw-hf/train.jsonl
+  raw_train_sha256: e78c7964aad1d5b7dbc66cb3a05d5885dbf2e29a2a3171f0d75b497bf18f3621
+  raw_train_rows: 8739
+  license_url: https://raw.githubusercontent.com/fhamborg/NewsMTSC/6b838e00f54423c253806327a0ae24dbffa24c9e/LICENSE
+  license_sha256: 1b06daddf3d13d7d90d7d1195bb5759a2945b1c4e1257b6e279730d7dcd02fc0
+curation:
+  tool: 'demo/quality/data.py: prepare_news'
+  removed_train_rows: 2417
+  policy: Исходные test RW/MT не меняются. Из dev удалены группы и нормализованные предложения, встречающиеся в
+    любом test. Из train удалены группы и предложения, пересекающиеся с обоими test и оставшимися dev.
+  groups: 'POLUSA: source ID. AllSides: общий второй числовой блок ID; группа сохраняется целиком.'
+  text_normalization: casefold, объединение пробельных символов одним пробелом, SHA-256.
+  selection: Сохранены все оставшиеся train, без отбора по модели или сложности меток.
+supervision:
+  reference: Пять человеческих аннотаторов; сохранены согласованные метки исходного NewsMTSC.
+  polarity_counts:
+    negative: 2369
+    neutral: 2255
+    positive: 1698
+  loss: 'Частичная тональность: отрицательные A+B, нейтральные C, положительные D+E. Разметка не задаёт интенсивность
+    и не содержит класс F.'
+  target: Границы упоминания заданы аннотаторами; маркеры [TARGET] добавляются общим lib/supervision.py.
+  scope: Только train. Эти примеры не добавляются в выгрузку HN, Storage, историю HN или запросы к учителю.
+license_text: |
+  This project uses code from various projects, who may have their own license or copyright.
+  - ABSA-PyTorch by Yury Soong et al., available at https://github.com/songyouwei/ABSA-PyTorch
+  - early-stopping-pytorch by Bjarten, available at https://github.com/Bjarten/early-stopping-pytorch
+
+  For newly developed files, the license information is:
+
+  Copyright 2020 Felix Hamborg
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -2,10 +2,12 @@
 
 import hashlib
 import json
+import math
 from collections import Counter
 from pathlib import Path
 
 from lib.sentiment import CHOICES
+from lib.teacher_contracts import input_hash
 
 
 FINGERPRINT_FIELDS = ("text", "parent_text", "story_title", "story_id", "parent_id")
@@ -20,11 +22,12 @@ def fingerprint(item):
 
 def supervision_hash(row):
     """Detect changed targets independently of unchanged comment text."""
-    raw = json.dumps(row["probabilities"], separators=(",", ":"))
+    raw = json.dumps({"probabilities": row["probabilities"], "teacher_input_hash": row.get("teacher_input_hash")},
+                     sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def load_dataset_snapshot(path, entity):
+def load_dataset_snapshot(path, entity, aliases=None):
     raw = Path(path).read_bytes()
     stories = json.loads(raw)
     if not isinstance(stories, list):
@@ -43,11 +46,19 @@ def load_dataset_snapshot(path, entity):
             digest = fingerprint(item)
             if item.get("label_fingerprint") != digest:
                 raise ValueError(f"Stale prepared label for {comment_id}: raw context changed")
+            if aliases is not None and item.get("label_input_hash") != input_hash(entity, item, aliases):
+                raise ValueError(f"Stale prepared label for {comment_id}: target, aliases, ID or full context changed; "
+                                 "relabel the dataset for the current target and aliases")
             if comment_id in labels:
                 raise ValueError(f"Duplicate prepared label for {comment_id}")
-            probabilities = [0.05 / len(CHOICES)] * len(CHOICES)
-            probabilities[CHOICES.index(label)] += 0.95
-            labels[comment_id] = {"fingerprint": digest, "probabilities": probabilities}
+            probabilities = item.get("label_probabilities")
+            if (not isinstance(probabilities, list) or len(probabilities) != len(CHOICES)
+                    or any(type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities)
+                    or not math.isclose(sum(probabilities), 1.0, abs_tol=1e-6)
+                    or CHOICES[max(range(len(CHOICES)), key=probabilities.__getitem__)] != label):
+                raise ValueError(f"Invalid teacher distribution for {comment_id}; relabel the prepared dataset")
+            labels[comment_id] = {"fingerprint": digest, "probabilities": probabilities,
+                                  "teacher_input_hash": item.get("label_input_hash")}
             sources[item["label_source"]] += 1
     if not labels:
         raise ValueError("Prepared dataset contains no labeled comments")
@@ -61,7 +72,7 @@ def load_dataset_snapshot(path, entity):
             "source_sha256": checksum,
             "items": len(labels),
             "label_sources": dict(sources),
-            "limitation": "Prepared assistant, rule and model labels demonstrate the pipeline; they are not independent human gold.",
+            "limitation": "Prepared teacher distributions are silver labels, not independent human gold.",
         },
         "labels": labels,
     }

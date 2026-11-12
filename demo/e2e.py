@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from lib.client import all_items, assert_status, call, monitoring_options, train_model, wait_job, wait_ready
 from lib.cli import configure_logging, load_cli_config, write_json
-from lib.mentions import MentionMatcher
+from lib.sentiment import SCORE_MAX, SCORE_MIN
 
 
 DATASETS = {"1k": 1000, "10k": 10000}
@@ -74,16 +74,22 @@ def validate_prediction(prediction, comment_id, scale):
     ), "Prediction requires six finite nonnegative probabilities"
     assert math.isclose(sum(values), 1, abs_tol=1e-5), "Prediction probabilities do not sum to one"
     score = prediction.get("score")
+    relevant = prediction.get("relevant")
+    assert isinstance(relevant, bool), "Prediction must state whether the target is relevant"
+    if not relevant:
+        assert score is None, "An irrelevant comment must not receive a sentiment score"
+        return
     assert (
         isinstance(score, (int, float)) and math.isfinite(score)
         and scale["min"] <= score <= scale["max"]
-    ), "New in-scope text did not receive a finite public-scale score"
+    ), "A relevant prediction requires a finite public-scale score"
 
 
 def main(argv=None):
     _, config = load_cli_config(ROOT / "demo/1k.yaml", argv)
     args = SimpleNamespace(**config["check"], dataset=config["dataset"])
     args.url = os.environ.get("MONITOR_E2E_URL", args.url)
+    os.environ.setdefault("MONITOR_HTTP_TIMEOUT", str(args.timeout))
     if args.pages < 1 or not 1 <= args.batch_size <= 100:
         raise ValueError("Use at least one page and a batch size between 1 and 100")
     if args.source != "hn_snapshot" or args.teacher != "dataset":
@@ -94,18 +100,12 @@ def main(argv=None):
     entity, source, teacher = monitoring_options(args.url, entity=args.entity, source=args.source, teacher=args.teacher)
     assert entity.strip().casefold() == dataset["entity"].casefold(), "Configured entity does not match dataset labels"
     config = call(args.url, "/api/config")
-    args.kind = args.kind or config["pipeline"]["model_kind"]
-    if args.kind not in {"hard_label", "softmax", "tiny_mlp"}:
-        raise ValueError("The prepared demo requires a small classifier: hard_label, softmax or tiny_mlp")
     if args.training_limit is None:
         args.training_limit = config["pipeline"]["training_limit"]
     if not expected_items <= args.training_limit <= 10000:
         raise ValueError(f"The complete dataset demo needs check.training_limit between {expected_items} and 10000")
-    monitoring = config["monitoring"]
-    aliases = monitoring["aliases"] if entity.casefold() == monitoring["query"].casefold() else []
-    matcher = MentionMatcher(entity, aliases, monitoring["matching"])
-    expected_mentions = sum(matcher.match(row) is not None for row in dataset["items"])
-    scale = config.get("score_scale", {"min": 0, "max": 5})
+    scale = config.get("score_scale", {"min": SCORE_MIN, "max": SCORE_MAX})
+    assert scale == {"min": SCORE_MIN, "max": SCORE_MAX}, "The public score scale must be 0–1"
     batch_request = {"entity": entity, "source": source, "limit": args.batch_size}
     assert_status(args.url, 401, "/api/config", role=None)
     assert_status(args.url, 403, "/api/import", body=batch_request, role="viewer")
@@ -134,78 +134,71 @@ def main(argv=None):
     assert all(
         context_fingerprint(row) == expected[row["id"]]["label_fingerprint"] for row in stored
     ), "Imported raw context differs from its prelabelled dataset fingerprint"
-    kinds = [args.kind]
-    if args.compare:
-        kinds.append("softmax" if args.kind == "hard_label" else "hard_label")
     results = []
-    for kind in kinds:
-        model = train_model(args.url, entity, teacher, kind, args.training_limit, args.timeout)
-        model_id = model["id"]
-        metrics = model.get("metrics") or {}
-        holdout = metrics.get("holdout") or {}
-        labelled = metrics.get("training_items", 0) + holdout.get("items", 0)
-        assert (
-            model.get("kind") == kind and model.get("teacher") == "dataset"
-        ), "Model did not use the selected small dataset classifier"
-        assert (
-            labelled == expected_items and metrics.get("labels_from_dataset") == labelled
-        ), "Dataset labels must cover every training and held-out row"
-        assert metrics.get("teacher_inference_items") == 0, "Dataset demo unexpectedly invoked a teacher model"
-        assert not (
-            metrics.get("optimization") or {}
-        ).get("encoder_frozen"), "The small demo unexpectedly contains a frozen NN encoder"
-        scored = call(args.url, "/api/score", body={"model_id": model_id, "entity": entity, "limit": expected_items})
-        assert (
-            scored["processed"] == scored["stored"] == expected_items
-        ), f"The model did not score all {expected_items} comments"
-        params = {"entity": entity, "model_id": model_id}
-        analytics = call(args.url, "/api/analytics", query=params, role="viewer")
-        assert (
-            analytics["summary"]["comments"] == expected_items
-            and analytics["summary"]["mentions"] == expected_mentions
-            and analytics["summary"]["scored"] == expected_items
-        ), f"Analytics did not retain {expected_items} comments / {expected_mentions} mentions / {expected_items} predictions"
-        periods = analytics["periods"]
-        assert (
-            periods and sum(row["scored"] for row in periods) == expected_items
-        ), "Timeline does not cover the full scored dataset"
-        evidence = list(all_items(args.url, "/api/comments", params))
-        evidence_ids = [row["comment_id"] for row in evidence]
-        assert (
-            len(evidence_ids) == len(set(evidence_ids)) == expected_items and set(evidence_ids) == set(expected)
-        ), "Evidence omits or duplicates scored comments"
-        report = call(args.url, "/api/report", query=params, role="viewer", raw=True)
-        assert (
-            "<table" in report and "Настроение обсуждений" in report and "{{" not in report
-        ), "The rendered HTML report is incomplete"
-        nonce = uuid4().hex
-        novel = {"id": "demo-new-" + nonce, "story_id": "demo-story-" + nonce,
-                 "text": f"{entity} explains useful examples, and I check the answers myself. New input {nonce}."}
-        prediction = call(args.url, f"/services/ml/models/{model_id}/predict", body={
-            "version": model["version"], "items": [novel],
-        })
-        assert len(prediction["items"]) == 1, "New-text prediction returned an incorrect number of rows"
-        validate_prediction(prediction["items"][0], novel["id"], scale)
-        job = call(args.url, f"/services/ml/models/{model_id}/train", body={
-            "teacher": "dataset", "mode": "incremental", "limit": args.training_limit,
-        })
-        skipped = wait_job(args.url, job["job_id"], args.timeout)
-        assert (
-            skipped["status"] == "skipped" and skipped.get("version") == model["version"]
-        ), "Unchanged dataset incremental training must skip without creating a version"
-        current = call(args.url, f"/services/ml/models/{model_id}/summary")
-        assert (
-            current["status"] == "ready" and current["version"] == model["version"]
-            and len(current["versions"]) == len(model["versions"])
-        ), "Skipped training changed the ready model or version history"
-        results.append({"kind": kind, "model_id": model_id, "version": model["version"],
-                        "dataset_labels": labelled, "teacher_inference_items": 0,
-                        "scored": scored["stored"], "mentions": analytics["summary"]["mentions"],
-                        "timeline_periods": len(periods), "evidence": len(evidence),
-                        "new_text_score": prediction["items"][0]["score"], "incremental": "skipped"})
+    model = train_model(args.url, entity, teacher, args.training_limit, args.timeout)
+    model_id = model["id"]
+    metrics = model.get("metrics") or {}
+    holdout = metrics.get("holdout") or {}
+    labelled = metrics.get("training_items", 0) + holdout.get("items", 0)
+    assert (
+        model.get("kind") == "encoder" and model.get("teacher") == "dataset"
+    ), "Model did not use the selected small dataset classifier"
+    assert (
+        labelled == expected_items and metrics.get("labels_from_dataset") == labelled
+    ), "Dataset labels must cover every training and held-out row"
+    assert metrics.get("teacher_inference_items") == 0, "Dataset demo unexpectedly invoked a teacher model"
+    scored = call(args.url, "/api/score", body={"model_id": model_id, "entity": entity, "limit": expected_items})
+    assert (
+        scored["processed"] == scored["stored"] == expected_items
+    ), f"The model did not score all {expected_items} comments"
+    params = {"entity": entity, "model_id": model_id}
+    analytics = call(args.url, "/api/analytics", query=params, role="viewer")
+    assert (
+        analytics["summary"]["comments"] == expected_items
+        and analytics["summary"]["scored"] == expected_items
+    ), f"Analytics did not retain all {expected_items} comments and predictions"
+    periods = analytics["periods"]
+    assert (
+        periods and sum(row["scored"] for row in periods) == expected_items
+    ), "Timeline does not cover the full scored dataset"
+    evidence = list(all_items(args.url, "/api/comments", params))
+    evidence_ids = [row["comment_id"] for row in evidence]
+    assert (
+        len(evidence_ids) == len(set(evidence_ids)) == expected_items and set(evidence_ids) == set(expected)
+    ), "Evidence omits or duplicates scored comments"
+    expected_mentions = sum(row["relevant"] for row in evidence)
+    assert analytics["summary"]["mentions"] == expected_mentions, "Mention counts differ from learned relevance"
+    report = call(args.url, "/api/report", query=params, role="viewer", raw=True)
+    assert (
+        "<table" in report and "Настроение обсуждений" in report and "{{" not in report
+    ), "The rendered HTML report is incomplete"
+    nonce = uuid4().hex
+    novel = {"id": "demo-new-" + nonce, "story_id": "demo-story-" + nonce,
+             "text": f"{entity} explains useful examples, and I check the answers myself. New input {nonce}."}
+    prediction = call(args.url, f"/services/ml/models/{model_id}/predict", body={
+        "version": model["version"], "items": [novel],
+    })
+    assert len(prediction["items"]) == 1, "New-text prediction returned an incorrect number of rows"
+    validate_prediction(prediction["items"][0], novel["id"], scale)
+    job = call(args.url, f"/services/ml/models/{model_id}/train", body={
+        "teacher": "dataset", "mode": "incremental", "limit": args.training_limit,
+    })
+    skipped = wait_job(args.url, job["job_id"], args.timeout)
+    assert (
+        skipped["status"] == "skipped" and skipped.get("version") == model["version"]
+    ), "Unchanged dataset incremental training must skip without creating a version"
+    current = call(args.url, f"/services/ml/models/{model_id}/summary")
+    assert (
+        current["status"] == "ready" and current["version"] == model["version"]
+        and len(current["versions"]) == len(model["versions"])
+    ), "Skipped training changed the ready model or version history"
+    results.append({"kind": "encoder", "model_id": model_id, "version": model["version"],
+                    "dataset_labels": labelled, "teacher_inference_items": 0,
+                    "scored": scored["stored"], "mentions": analytics["summary"]["mentions"],
+                    "timeline_periods": len(periods), "evidence": len(evidence),
+                    "new_text_score": prediction["items"][0]["score"], "incremental": "skipped"})
     proof = {"status": "passed", "dataset": args.dataset, "entity": entity, "source": "hn_snapshot", "label_source": "dataset",
              "dataset_rows": len(expected), "label_sources": dataset["sources"], "labels": dataset["classes"],
-             "expected_mentions": expected_mentions,
              "reference_kind": "prelabelled silver dataset; not independent human gold",
              "imported": received, "import_batches": batches, "unique_stored_ids": len(set(ids)),
              "anonymous_HTTP": 401, "viewer_write_HTTP": 403, "models": results}

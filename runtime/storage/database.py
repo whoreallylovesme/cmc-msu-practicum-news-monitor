@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS predictions (
     model_id TEXT NOT NULL,
     comment_id TEXT NOT NULL,
     probabilities TEXT NOT NULL,
-    score REAL CHECK (score BETWEEN 0 AND 5),
+    score REAL CHECK (score BETWEEN 0 AND 1),
     relevant INTEGER NOT NULL CHECK (relevant IN (0, 1)),
     PRIMARY KEY (entity, model_id, comment_id),
     CHECK ((relevant = 1 AND score IS NOT NULL) OR (relevant = 0 AND score IS NULL)),
@@ -126,7 +126,12 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as connection:
             connection.execute("PRAGMA journal_mode = WAL")
-            connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA + "\nCOMMIT;")
+            connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA)
+            if connection.execute("PRAGMA user_version").fetchone()[0] == 0:
+                # Version 0 stored scores on the legacy 0–5 scale.
+                connection.execute("UPDATE predictions SET score = score / 5.0 WHERE score IS NOT NULL")
+                connection.execute("PRAGMA user_version = 1")
+            connection.commit()
 
     @contextmanager
     def connect(self, write: bool = False) -> Iterator[sqlite3.Connection]:
