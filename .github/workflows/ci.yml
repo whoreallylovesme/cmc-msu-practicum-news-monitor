@@ -71,7 +71,10 @@ jobs:
           container=$(docker compose ps -q ml)
           docker cp ut "$container:/app/ut"
           docker cp runtime/storage "$container:/app/runtime/storage"
+          docker cp runtime/web_master "$container:/app/runtime/web_master"
+          docker cp runtime/visualization "$container:/app/runtime/visualization"
           docker cp runtime/teacher "$container:/app/runtime/teacher"
+          docker cp demo/e2e.py "$container:/app/demo/e2e.py"
           docker cp demo/quality "$container:/app/demo/quality"
           docker compose exec -T ml python -c 'import torch; assert torch.version.cuda is None, "CI requires the official CPU PyTorch build"'
           docker compose exec -T ml python -m unittest discover -s /app/ut -v
