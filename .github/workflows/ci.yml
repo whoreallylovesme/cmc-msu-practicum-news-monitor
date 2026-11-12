@@ -70,6 +70,7 @@ jobs:
         run: |
           container=$(docker compose ps -q ml)
           docker cp ut "$container:/app/ut"
+          docker cp runtime/storage "$container:/app/runtime/storage"
           docker cp runtime/teacher "$container:/app/runtime/teacher"
           docker cp demo/quality "$container:/app/demo/quality"
           docker compose exec -T ml python -c 'import torch; assert torch.version.cuda is None, "CI requires the official CPU PyTorch build"'
