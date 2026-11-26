@@ -14,6 +14,12 @@ import student
 
 
 class QwenEnsembleTests(unittest.TestCase):
+    def test_prompt_is_loaded_from_external_file(self):
+        path = Path(qwen_ensemble.__file__).with_name("prompts") / "qwen_evidence_system.txt"
+        self.assertTrue(path.is_file())
+        self.assertEqual(path.read_text(encoding="utf-8").strip(), qwen_ensemble.EVIDENCE_PROMPT)
+        self.assertIn("EVIDENCE: <one short sentence>", qwen_ensemble.EVIDENCE_PROMPT)
+
     def test_parse_label_uses_final_class(self):
         self.assertEqual(qwen_ensemble.parse_label("EVIDENCE: Useful.\nCLASS: D"), 3)
         self.assertEqual(qwen_ensemble.parse_label("CLASS: A\nCLASS: F"), 5)
