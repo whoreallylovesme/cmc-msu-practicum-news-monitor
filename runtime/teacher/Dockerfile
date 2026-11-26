@@ -7,7 +7,7 @@ RUN curl -fsSL "https://github.com/ggml-org/llama.cpp/archive/refs/tags/${LLAMA_
     | tar -xz --strip-components=1 -C /tmp \
     && cmake -S /tmp -B /tmp/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
        -DGGML_CUDA=OFF -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
-       -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF \
+       -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DLLAMA_USE_PREBUILT_UI=OFF \
     && cmake --build /tmp/build --target llama-server --parallel 4
 
 FROM python:3.12-slim-trixie AS python-runtime
