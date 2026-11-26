@@ -62,6 +62,10 @@ def predict(artifact, items):
         raise ValueError("This artifact is not a supported encoder student")
     if not items:
         return np.empty((0, len(CHOICES)), dtype=np.float64)
+    if artifact.get("architecture") == "qwen34-zero-evidence-four-vote-v1":
+        import qwen_ensemble
+
+        return qwen_ensemble.predict(artifact, items)
     import neural
 
     return neural.predict(artifact, items)

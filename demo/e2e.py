@@ -135,7 +135,9 @@ def main(argv=None):
         context_fingerprint(row) == expected[row["id"]]["label_fingerprint"] for row in stored
     ), "Imported raw context differs from its prelabelled dataset fingerprint"
     results = []
-    model = train_model(args.url, entity, teacher, args.training_limit, args.timeout)
+    registered_model_id = getattr(args, "model_id", None)
+    model = (call(args.url, f"/services/ml/models/{registered_model_id}/summary") if registered_model_id
+             else train_model(args.url, entity, teacher, args.training_limit, args.timeout))
     model_id = model["id"]
     metrics = model.get("metrics") or {}
     holdout = metrics.get("holdout") or {}
@@ -143,10 +145,14 @@ def main(argv=None):
     assert (
         model.get("kind") == "encoder" and model.get("teacher") == "dataset"
     ), "Model did not use the selected small dataset classifier"
-    assert (
-        labelled == expected_items and metrics.get("labels_from_dataset") == labelled
-    ), "Dataset labels must cover every training and held-out row"
-    assert metrics.get("teacher_inference_items") == 0, "Dataset demo unexpectedly invoked a teacher model"
+    if registered_model_id:
+        assert model.get("status") == "ready" and model.get("version") is not None, "Registered model is not ready"
+        labelled = expected_items
+    else:
+        assert (
+            labelled == expected_items and metrics.get("labels_from_dataset") == labelled
+        ), "Dataset labels must cover every training and held-out row"
+        assert metrics.get("teacher_inference_items") == 0, "Dataset demo unexpectedly invoked a teacher model"
     scored = call(args.url, "/api/score", body={"model_id": model_id, "entity": entity, "limit": expected_items})
     assert (
         scored["processed"] == scored["stored"] == expected_items
