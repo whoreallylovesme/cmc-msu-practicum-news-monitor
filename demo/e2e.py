@@ -13,7 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from common.fingerprints import (
+from lib.fingerprints import (
     LABEL_CONTEXT_FIELDS as FINGERPRINT_FIELDS,
     label_context_fingerprint,
 )

@@ -15,7 +15,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from common.prompts import load_prompt
+from lib.prompts import load_prompt
 from lib.model_assets import asset_spec, ensure_asset, file_sha256
 from lib.sentiment import CHOICES
 from lib.teacher_contracts import INPUT_HASH_VERSION, input_hash
@@ -81,7 +81,7 @@ def load_settings(path=None):
     if prompt is None:
         prompt_file = config.get("system_prompt_file")
         if prompt_file is None:
-            prompt_path = ROOT / "common/prompts/target_sentiment_evidence.txt"
+            prompt_path = ROOT / "runtime/prompts/target_sentiment_evidence.txt"
         else:
             if not isinstance(prompt_file, str) or not prompt_file.strip():
                 raise ValueError("system_prompt_file must be a nonempty path")

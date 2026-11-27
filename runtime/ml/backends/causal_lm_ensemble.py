@@ -8,9 +8,9 @@ from pathlib import Path
 
 import numpy as np
 
-from common.hashing import directory_sha256, file_sha256
-from common.inference import resolve_device
-from common.prompts import load_prompt
+from lib.hashing import directory_sha256, file_sha256
+from lib.inference import resolve_device
+from lib.prompts import load_prompt
 from lib.teacher_contracts import canonical_input
 
 
@@ -23,7 +23,7 @@ LEGACY_ADAPTER_MODES = (
     ("epoch1_evidence", "evidence"),
     ("epoch2_evidence", "evidence"),
 )
-PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
+PROMPTS = Path(__file__).resolve().parent.parent.parent / "prompts"
 EVIDENCE_PROMPT = load_prompt(PROMPTS / "evidence_system.txt").strip()
 LABEL_ONLY_PROMPT = load_prompt(PROMPTS / "label_only_system.txt").strip()
 

@@ -2,7 +2,7 @@
 
 import hashlib
 
-from common.fingerprints import comment_content_hash
+from lib.fingerprints import comment_content_hash
 from student import split_threads
 
 

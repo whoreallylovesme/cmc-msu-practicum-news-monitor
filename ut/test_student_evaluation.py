@@ -60,9 +60,9 @@ class StudentEvaluationTests(unittest.TestCase):
         self.assertEqual((protocol["model_id"], protocol["device"]), ("causal-lm-release", "auto"))
         self.assertIn("runtime/ml/backends/causal_lm_ensemble.py", protocol["source_sha256"])
         prompt_sources = {name: checksum for name, checksum in protocol["source_sha256"].items()
-                          if name.startswith("runtime/ml/prompts/")}
-        self.assertLessEqual({"runtime/ml/prompts/evidence_system.txt",
-                              "runtime/ml/prompts/label_only_system.txt"}, set(prompt_sources))
+                          if name.startswith("runtime/prompts/")}
+        self.assertEqual({"runtime/prompts/evidence_system.txt",
+                          "runtime/prompts/label_only_system.txt"}, set(prompt_sources))
         for name, checksum in prompt_sources.items():
             self.assertEqual(checksum, hashlib.sha256((ROOT / name).read_bytes()).hexdigest())
         self.assertEqual(registry.load("causal-lm-release", 1)["device"], "cpu")

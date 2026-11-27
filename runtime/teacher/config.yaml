@@ -30,4 +30,4 @@ evidence_generation:
   max_tokens: 96
   temperature: 0.0
   requested_words: 30
-system_prompt_file: ../../common/prompts/target_sentiment_evidence.txt
+system_prompt_file: ../prompts/target_sentiment_evidence.txt

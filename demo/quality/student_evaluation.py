@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runtime" / "ml"))
 
-from common.hashing import file_sha256
+from lib.hashing import file_sha256
 from registry import Registry
 import student
 
@@ -61,8 +61,7 @@ def load_student(config):
                     "demo/quality/student_evaluation.py"]
     if runtime is artifact:
         source_names.append("runtime/ml/backends/causal_lm_ensemble.py")
-        source_names.extend(str(path.relative_to(ROOT)) for path in sorted((ROOT / "runtime/ml/prompts").rglob("*"))
-                            if path.is_file())
+        source_names.extend(("runtime/prompts/evidence_system.txt", "runtime/prompts/label_only_system.txt"))
     protocol = {
         "kind": "trained-student", "model_id": model_id, "version": version,
         "artifact_sha256": checksum, "entity": artifact["entity"],

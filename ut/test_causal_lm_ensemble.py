@@ -16,17 +16,23 @@ import student
 
 class CausalLmEnsembleTests(unittest.TestCase):
     def test_evidence_prompt_is_loaded_from_external_file(self):
-        path = Path(causal_lm_ensemble.__file__).parent.parent / "prompts" / "evidence_system.txt"
+        path = Path(causal_lm_ensemble.__file__).parent.parent.parent / "prompts" / "evidence_system.txt"
         self.assertTrue(path.is_file())
         self.assertEqual(path.read_text(encoding="utf-8").strip(), causal_lm_ensemble.EVIDENCE_PROMPT)
         self.assertIn("EVIDENCE: <one short sentence>", causal_lm_ensemble.EVIDENCE_PROMPT)
 
     def test_label_only_prompt_is_a_separate_external_file(self):
-        path = Path(causal_lm_ensemble.__file__).parent.parent / "prompts" / "label_only_system.txt"
+        path = Path(causal_lm_ensemble.__file__).parent.parent.parent / "prompts" / "label_only_system.txt"
         self.assertTrue(path.is_file())
         self.assertEqual(path.read_text(encoding="utf-8").strip(), causal_lm_ensemble.LABEL_ONLY_PROMPT)
         self.assertIn("Return exactly one letter A, B, C, D, E or F", causal_lm_ensemble.LABEL_ONLY_PROMPT)
         self.assertNotIn("EVIDENCE:", causal_lm_ensemble.LABEL_ONLY_PROMPT)
+
+    def test_ml_image_contains_lib_helpers_and_shared_prompts(self):
+        dockerfile = (ROOT / "runtime/ml/Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY lib ./lib", dockerfile)
+        self.assertIn("COPY runtime/prompts ./runtime/prompts", dockerfile)
+        self.assertNotIn("COPY common ./common", dockerfile)
 
     def test_parse_label_uses_final_class(self):
         self.assertEqual(causal_lm_ensemble.parse_label("EVIDENCE: Useful.\nCLASS: D"), 3)

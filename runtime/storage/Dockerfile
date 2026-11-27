@@ -5,7 +5,6 @@ WORKDIR /app
 COPY runtime/storage/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
-COPY common ./common
 COPY config.yaml ./config.yaml
 COPY runtime/storage ./runtime/storage
 RUN install -d -o 10001 -g 10001 /data
