@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runtime" / "ml"))
 
-from lib.hashing import file_sha256
+from runtime.common.hashing import file_sha256
 from registry import Registry
 import student
 

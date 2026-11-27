@@ -26,12 +26,12 @@ teacher = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(teacher)
 
 
-class LibraryHelperTests(unittest.TestCase):
-    def test_lib_modules_and_runtime_prompts_are_available(self):
+class RuntimeHelperTests(unittest.TestCase):
+    def test_runtime_common_modules_and_prompts_are_available(self):
         paths = (
-            "lib/hashing.py",
-            "lib/inference.py",
-            "lib/prompts.py",
+            "runtime/common/hashing.py",
+            "runtime/common/inference.py",
+            "runtime/common/prompts.py",
             "runtime/prompts/target_sentiment_evidence.txt",
         )
         for relative in paths:
@@ -39,7 +39,7 @@ class LibraryHelperTests(unittest.TestCase):
                 self.assertTrue((ROOT / relative).is_file())
 
     def test_file_sha256_hashes_bytes(self):
-        from lib import hashing
+        from runtime.common import hashing
 
         self.assertTrue(hasattr(hashing, "file_sha256"))
         with tempfile.TemporaryDirectory() as temporary:
@@ -48,7 +48,7 @@ class LibraryHelperTests(unittest.TestCase):
             self.assertEqual(hashing.file_sha256(path), hashlib.sha256(b"model\x00bytes").hexdigest())
 
     def test_directory_sha256_preserves_relative_path_digest_semantics(self):
-        from lib import hashing
+        from runtime.common import hashing
 
         self.assertTrue(hasattr(hashing, "directory_sha256"))
         with tempfile.TemporaryDirectory() as temporary:
@@ -64,7 +64,7 @@ class LibraryHelperTests(unittest.TestCase):
 
     def test_resolve_device_auto_prefers_cuda_then_mps_then_cpu(self):
         import torch
-        from lib import inference
+        from runtime.common import inference
 
         self.assertTrue(hasattr(inference, "resolve_device"))
         for cuda, mps, expected in ((True, True, "cuda"), (False, True, "mps"), (False, False, "cpu")):
@@ -74,7 +74,7 @@ class LibraryHelperTests(unittest.TestCase):
                 self.assertEqual(inference.resolve_device({}), expected)
 
     def test_load_prompt_strips_file_and_substitutes_only_requested_values(self):
-        from lib import prompts
+        from runtime.common import prompts
 
         self.assertTrue(hasattr(prompts, "load_prompt"))
         with tempfile.TemporaryDirectory() as temporary:
@@ -204,14 +204,15 @@ class TeacherTests(unittest.TestCase):
         runtime.close()
         self.assertTrue(all(client.closed for client in clients))
 
-    def test_teacher_image_includes_lib_helpers_and_shared_prompts(self):
+    def test_teacher_image_includes_runtime_helpers_and_shared_prompts(self):
         dockerfile = (ROOT / "runtime/teacher/Dockerfile").read_text(encoding="utf-8")
         self.assertIn("COPY lib ./lib", dockerfile)
+        self.assertIn("COPY runtime/common ./runtime/common", dockerfile)
         self.assertIn("COPY runtime/prompts ./runtime/prompts", dockerfile)
         self.assertNotIn("COPY common ./common", dockerfile)
 
     def test_supplied_prompt_and_revision_are_preserved(self):
-        from lib import prompts
+        from runtime.common import prompts
 
         self.assertTrue(hasattr(prompts, "load_prompt"))
         settings = teacher.load_settings(ROOT / "runtime/teacher/config.yaml")

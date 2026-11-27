@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from lib.fingerprints import comment_content_hash
+from runtime.common.fingerprints import comment_content_hash
 from lib.config import load_config
 from lib.contracts import Comment as CommentRecord
 from lib.contracts import Identifier, Prediction, Probabilities

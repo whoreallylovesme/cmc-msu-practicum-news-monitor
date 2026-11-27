@@ -8,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / "runtime/storage"), str(ROOT / "runtime/ml")]
 
-from lib.fingerprints import comment_content_hash, label_context_fingerprint
+from runtime.common.fingerprints import comment_content_hash, label_context_fingerprint
 from demo.e2e import context_fingerprint
 from runtime.ml.dataset_labels import fingerprint as dataset_label_fingerprint
 from runtime.ml.training_data import fingerprint as training_fingerprint

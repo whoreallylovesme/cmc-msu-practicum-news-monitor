@@ -15,7 +15,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from lib.prompts import load_prompt
+from runtime.common.prompts import load_prompt
 from lib.model_assets import asset_spec, ensure_asset, file_sha256
 from lib.sentiment import CHOICES
 from lib.teacher_contracts import INPUT_HASH_VERSION, input_hash

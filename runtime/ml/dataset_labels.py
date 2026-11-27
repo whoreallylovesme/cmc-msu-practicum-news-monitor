@@ -6,7 +6,7 @@ import math
 from collections import Counter
 from pathlib import Path
 
-from lib.fingerprints import (
+from runtime.common.fingerprints import (
     LABEL_CONTEXT_FIELDS as FINGERPRINT_FIELDS,
     label_context_fingerprint,
 )

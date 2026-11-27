@@ -8,9 +8,9 @@ from pathlib import Path
 
 import numpy as np
 
-from lib.hashing import directory_sha256, file_sha256
-from lib.inference import resolve_device
-from lib.prompts import load_prompt
+from runtime.common.hashing import directory_sha256, file_sha256
+from runtime.common.inference import resolve_device
+from runtime.common.prompts import load_prompt
 from lib.teacher_contracts import canonical_input
 
 

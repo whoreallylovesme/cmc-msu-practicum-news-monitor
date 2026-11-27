@@ -6,6 +6,7 @@ COPY runtime/storage/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
 COPY config.yaml ./config.yaml
+COPY runtime/common ./runtime/common
 COPY runtime/storage ./runtime/storage
 RUN install -d -o 10001 -g 10001 /data
 USER 10001:10001

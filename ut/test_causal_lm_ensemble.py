@@ -28,9 +28,9 @@ class CausalLmEnsembleTests(unittest.TestCase):
         self.assertIn("Return exactly one letter A, B, C, D, E or F", causal_lm_ensemble.LABEL_ONLY_PROMPT)
         self.assertNotIn("EVIDENCE:", causal_lm_ensemble.LABEL_ONLY_PROMPT)
 
-    def test_ml_image_contains_lib_helpers_and_shared_prompts(self):
+    def test_ml_image_contains_runtime_helpers_and_shared_prompts(self):
         dockerfile = (ROOT / "runtime/ml/Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("COPY lib ./lib", dockerfile)
+        self.assertIn("COPY runtime/common ./runtime/common", dockerfile)
         self.assertIn("COPY runtime/prompts ./runtime/prompts", dockerfile)
         self.assertNotIn("COPY common ./common", dockerfile)
 

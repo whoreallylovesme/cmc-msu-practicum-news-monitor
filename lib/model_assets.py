@@ -11,7 +11,7 @@ from typing import Optional
 
 import requests
 
-from lib.hashing import file_sha256
+from runtime.common.hashing import file_sha256
 
 
 @dataclass(frozen=True)
