@@ -1,6 +1,5 @@
 """Verify the prelabelled Hacker News demo through the real five-service API."""
 
-import hashlib
 import json
 import logging
 import math
@@ -14,20 +13,21 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from common.fingerprints import (
+    LABEL_CONTEXT_FIELDS as FINGERPRINT_FIELDS,
+    label_context_fingerprint,
+)
 from lib.client import all_items, assert_status, call, monitoring_options, train_model, wait_job, wait_ready
 from lib.cli import configure_logging, load_cli_config, write_json
 from lib.sentiment import SCORE_MAX, SCORE_MIN
 
 
 DATASETS = {"1k": 1000, "10k": 10000}
-FINGERPRINT_FIELDS = ("text", "parent_text", "story_title", "story_id", "parent_id")
 LOGGER = logging.getLogger(__name__)
 
 
 def context_fingerprint(item):
-    fields = {key: item.get(key) for key in FINGERPRINT_FIELDS}
-    raw = json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return label_context_fingerprint(item)
 
 
 def validate_dataset(document, expected_items):

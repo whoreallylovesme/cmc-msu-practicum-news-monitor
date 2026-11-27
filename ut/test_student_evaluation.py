@@ -42,6 +42,42 @@ class StudentEvaluationTests(unittest.TestCase):
             registry.save(state, (model_id, version, checksum, payload))
         return registry
 
+    def causal_registry(self, architecture):
+        registry = Registry(self.path)
+        model_id = "causal-lm-release"
+        model = {"id": model_id, "entity": "ChatGPT", "kind": "encoder", "version": 1,
+                 "versions": [{"version": 1, "trained_at": "2026-11-04"}]}
+        artifact = {"kind": "encoder", "architecture": architecture, "entity": "ChatGPT",
+                    "score_statistic": "mean", "device": "cpu", "members": {}, "prompt_assets": {}}
+        payload, checksum = serialize(artifact)
+        registry.save({"models": {model_id: model}, "jobs": {}}, (model_id, 1, checksum, payload))
+        return registry
+
+    def test_causal_lm_artifact_without_encoder_and_prompt_provenance(self):
+        registry = self.causal_registry("causal-lm-evidence-four-vote-v1")
+        self.config["student"]["device"] = "auto"
+        protocol, _ = evaluation.load_student(self.config)
+        self.assertEqual((protocol["model_id"], protocol["device"]), ("causal-lm-release", "auto"))
+        self.assertIn("runtime/ml/backends/causal_lm_ensemble.py", protocol["source_sha256"])
+        prompt_sources = {name: checksum for name, checksum in protocol["source_sha256"].items()
+                          if name.startswith("runtime/ml/prompts/")}
+        self.assertLessEqual({"runtime/ml/prompts/evidence_system.txt",
+                              "runtime/ml/prompts/label_only_system.txt"}, set(prompt_sources))
+        for name, checksum in prompt_sources.items():
+            self.assertEqual(checksum, hashlib.sha256((ROOT / name).read_bytes()).hexdigest())
+        self.assertEqual(registry.load("causal-lm-release", 1)["device"], "cpu")
+
+    def test_legacy_qwen_architecture_alias_does_not_need_encoder(self):
+        self.causal_registry("qwen34-zero-evidence-four-vote-v1")
+        protocol, predict = evaluation.load_student(self.config)
+        self.assertIn("runtime/ml/backends/causal_lm_ensemble.py", protocol["source_sha256"])
+        expected = [0, 0, 1, 0, 0, 0]
+        with patch.object(evaluation.student, "predict", return_value=[expected]) as classify:
+            self.assertEqual(predict("ChatGPT", {"id": "row", "text": "comment"}), expected)
+        artifact = classify.call_args.args[0]
+        self.assertEqual(artifact["architecture"], "qwen34-zero-evidence-four-vote-v1")
+        self.assertNotIn("encoder", artifact)
+
     def test_missing_registry_is_not_created(self):
         with self.assertRaisesRegex(AssertionError, "registry"):
             evaluation.load_student(self.config)

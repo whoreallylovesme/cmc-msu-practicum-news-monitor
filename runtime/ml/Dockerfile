@@ -18,6 +18,7 @@ ARG TORCH_VERSION=2.15.0
 RUN python -m pip install --no-cache-dir "torch==${TORCH_VERSION}" --index-url ${TORCH_INDEX_URL} \
     && python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
+COPY common ./common
 COPY config.yaml ./config.yaml
 COPY runtime/ml ./runtime/ml
 COPY demo/hn_*.json ./demo/

@@ -23,6 +23,7 @@ RUN apt-get update \
 COPY runtime/teacher/requirements.txt ./requirements.txt
 RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
+COPY common ./common
 COPY runtime/teacher ./runtime/teacher
 RUN install -d -o 10001 -g 10001 /models /data/teacher-logs
 USER 10001:10001

@@ -1,5 +1,6 @@
 """Check teacher isolation and cache identity without downloading a model."""
 
+import hashlib
 import importlib.util
 import math
 from pathlib import Path
@@ -23,6 +24,68 @@ from lib.teacher_contracts import TeacherComment, TeacherRequest, input_hash
 SPEC = importlib.util.spec_from_file_location("teacher_model_under_test", ROOT / "runtime/teacher/model.py")
 teacher = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(teacher)
+
+
+class CommonHelperTests(unittest.TestCase):
+    def test_common_modules_are_available(self):
+        paths = (
+            "common/__init__.py",
+            "common/hashing.py",
+            "common/inference.py",
+            "common/prompts.py",
+            "common/prompts/target_sentiment_evidence.txt",
+        )
+        for relative in paths:
+            with self.subTest(path=relative):
+                self.assertTrue((ROOT / relative).is_file())
+
+    def test_file_sha256_hashes_bytes(self):
+        from common import hashing
+
+        self.assertTrue(hasattr(hashing, "file_sha256"))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "model.bin"
+            path.write_bytes(b"model\x00bytes")
+            self.assertEqual(hashing.file_sha256(path), hashlib.sha256(b"model\x00bytes").hexdigest())
+
+    def test_directory_sha256_preserves_relative_path_digest_semantics(self):
+        from common import hashing
+
+        self.assertTrue(hasattr(hashing, "directory_sha256"))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "nested").mkdir()
+            files = {"z.bin": b"last", "nested/a.bin": b"first", "empty.bin": b""}
+            for relative, content in files.items():
+                (directory / relative).write_bytes(content)
+            expected = hashlib.sha256()
+            for relative in sorted(files):
+                expected.update(relative.encode() + b"\0" + files[relative])
+            self.assertEqual(hashing.directory_sha256(directory), expected.hexdigest())
+
+    def test_resolve_device_auto_prefers_cuda_then_mps_then_cpu(self):
+        import torch
+        from common import inference
+
+        self.assertTrue(hasattr(inference, "resolve_device"))
+        for cuda, mps, expected in ((True, True, "cuda"), (False, True, "mps"), (False, False, "cpu")):
+            with self.subTest(cuda=cuda, mps=mps), patch.object(
+                torch.cuda, "is_available", return_value=cuda
+            ), patch.object(torch.backends.mps, "is_available", return_value=mps):
+                self.assertEqual(inference.resolve_device({}), expected)
+
+    def test_load_prompt_strips_file_and_substitutes_only_requested_values(self):
+        from common import prompts
+
+        self.assertTrue(hasattr(prompts, "load_prompt"))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "prompt.txt"
+            path.write_text("\nUse {requested_words} words; keep {other}.\n", encoding="utf-8")
+            self.assertEqual(prompts.load_prompt(path), "Use {requested_words} words; keep {other}.")
+            self.assertEqual(
+                prompts.load_prompt(path, substitutions={"requested_words": 12}),
+                "Use 12 words; keep {other}.",
+            )
 
 
 class TeacherTests(unittest.TestCase):
@@ -141,6 +204,64 @@ class TeacherTests(unittest.TestCase):
             self.assertEqual(first["item"], index)
         runtime.close()
         self.assertTrue(all(client.closed for client in clients))
+
+    def test_teacher_image_includes_common_helpers(self):
+        dockerfile = (ROOT / "runtime/teacher/Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY common ./common", dockerfile)
+
+    def test_supplied_prompt_and_revision_are_preserved(self):
+        from common import prompts
+
+        self.assertTrue(hasattr(prompts, "load_prompt"))
+        settings = teacher.load_settings(ROOT / "runtime/teacher/config.yaml")
+        expected = prompts.load_prompt(
+            ROOT / "common/prompts/target_sentiment_evidence.txt",
+            substitutions={"requested_words": 30},
+        )
+        self.assertEqual(settings["protocol"]["system_prompt"], expected)
+        self.assertEqual(settings["model_revision"], "cdbee75f17c01a7cc42f958dc650907174af0554")
+        self.assertEqual(settings["revision"], "gguf-c2f59f95c438bf2ba74553bdf8b6ee21f166ed636990f3ad80e83721eec8d296")
+        self.assertEqual(settings["llama"]["chat_template_kwargs"], {"enable_thinking": False})
+
+    def test_system_prompt_file_is_relative_to_yaml_without_model_specific_defaults(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "teacher.gguf").write_bytes(b"GGUF")
+            (directory / "prompts").mkdir()
+            (directory / "prompts/custom.txt").write_text(
+                "Custom evidence in at most {requested_words} words.\nSecond line.\n", encoding="utf-8"
+            )
+            config = directory / "teacher.yaml"
+            config.write_text(teacher.yaml.safe_dump({
+                "model_weights": {"path": "teacher.gguf", "is_local": True},
+                "max_model_bytes": 4,
+                "system_prompt_file": "prompts/custom.txt",
+                "evidence_generation": {"requested_words": 7},
+            }), encoding="utf-8")
+            settings = teacher.load_settings(config)
+        self.assertEqual(settings["protocol"]["system_prompt"], "Custom evidence in at most 7 words.\nSecond line.")
+        self.assertEqual(settings["llama"]["chat_template_kwargs"], {})
+        self.assertEqual(settings["protocol"]["chat_template_kwargs"], {})
+
+    def test_inline_prompt_is_preserved_and_changes_revision(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "teacher.gguf").write_bytes(b"GGUF")
+            revisions = []
+            for name, text in (("first", "First prompt for {requested_words} words."),
+                               ("second", "Second prompt for {requested_words} words.")):
+                config = directory / f"{name}.yaml"
+                config.write_text(teacher.yaml.safe_dump({
+                    "model_weights": {"path": "teacher.gguf", "is_local": True},
+                    "max_model_bytes": 4,
+                    "model_revision": "supplied-model-revision",
+                    "system_prompt": text,
+                }), encoding="utf-8")
+                settings = teacher.load_settings(config)
+                self.assertEqual(settings["protocol"]["system_prompt"], text.format(requested_words=30))
+                self.assertEqual(settings["model_revision"], "supplied-model-revision")
+                revisions.append(settings["revision"])
+        self.assertNotEqual(*revisions)
 
     def test_local_model_needs_only_path_and_changed_bytes_change_revision(self):
         with tempfile.TemporaryDirectory() as temporary:

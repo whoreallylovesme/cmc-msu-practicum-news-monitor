@@ -1,8 +1,8 @@
 """Select fresh examples and preserve thread roles across a model's revisions."""
 
 import hashlib
-import json
 
+from common.fingerprints import comment_content_hash
 from student import split_threads
 
 
@@ -10,8 +10,7 @@ def fingerprint(item):
     if item.get("content_hash"):
         raw_hash = item["content_hash"]
     else:
-        fields = [item.get(key) for key in ("story_id", "story_title", "parent_id", "parent_text", "text")]
-        raw_hash = hashlib.sha256(json.dumps(fields, ensure_ascii=False).encode("utf-8")).hexdigest()
+        raw_hash = comment_content_hash(item)
     if item.get("supervision_hash"):
         return hashlib.sha256(f"{raw_hash}:{item['supervision_hash']}".encode("utf-8")).hexdigest()
     return raw_hash

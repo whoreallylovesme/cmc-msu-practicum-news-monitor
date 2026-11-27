@@ -1,4 +1,3 @@
-import hashlib
 import json
 import logging
 import re
@@ -15,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from common.fingerprints import comment_content_hash
 from lib.config import load_config
 from lib.contracts import Comment as CommentRecord
 from lib.contracts import Identifier, Prediction, Probabilities
@@ -45,8 +45,7 @@ class Comment(CommentRecord):
         record = self.model_dump()
         record["published_at"] = utc_iso(self.published_at)
         record["entity"] = entity
-        context = [self.story_id, self.story_title, self.parent_id, self.parent_text, self.text]
-        record["content_hash"] = hashlib.sha256(json.dumps(context, ensure_ascii=False).encode("utf-8")).hexdigest()
+        record["content_hash"] = comment_content_hash(record)
         return record
 
 

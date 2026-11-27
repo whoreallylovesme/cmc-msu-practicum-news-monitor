@@ -8,10 +8,15 @@ from sklearn.metrics import (
     precision_score, recall_score,
 )
 
+from backends import causal_lm_ensemble
 from lib.sentiment import CHOICES, OFF_TOPIC, SCORE_LEVELS
 
 
 SCORES = np.asarray(SCORE_LEVELS)
+BACKENDS = {
+    causal_lm_ensemble.PROTOCOL: causal_lm_ensemble,
+    causal_lm_ensemble.LEGACY_PROTOCOL: causal_lm_ensemble,
+}
 
 
 def normalized_distribution(values):
@@ -62,10 +67,9 @@ def predict(artifact, items):
         raise ValueError("This artifact is not a supported encoder student")
     if not items:
         return np.empty((0, len(CHOICES)), dtype=np.float64)
-    if artifact.get("architecture") == "qwen34-zero-evidence-four-vote-v1":
-        import qwen_ensemble
-
-        return qwen_ensemble.predict(artifact, items)
+    backend = BACKENDS.get(artifact.get("architecture"))
+    if backend is not None:
+        return backend.predict(artifact, items)
     import neural
 
     return neural.predict(artifact, items)

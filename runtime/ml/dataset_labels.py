@@ -6,18 +6,17 @@ import math
 from collections import Counter
 from pathlib import Path
 
+from common.fingerprints import (
+    LABEL_CONTEXT_FIELDS as FINGERPRINT_FIELDS,
+    label_context_fingerprint,
+)
 from lib.sentiment import CHOICES
 from lib.teacher_contracts import input_hash
 
 
-FINGERPRINT_FIELDS = ("text", "parent_text", "story_title", "story_id", "parent_id")
-
-
 def fingerprint(item):
     """Hash raw label context, independently of Storage's content hash."""
-    fields = {key: item.get(key) for key in FINGERPRINT_FIELDS}
-    raw = json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return label_context_fingerprint(item)
 
 
 def supervision_hash(row):

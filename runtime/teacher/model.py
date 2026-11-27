@@ -15,6 +15,7 @@ from pathlib import Path
 import requests
 import yaml
 
+from common.prompts import load_prompt
 from lib.model_assets import asset_spec, ensure_asset, file_sha256
 from lib.sentiment import CHOICES
 from lib.teacher_contracts import INPUT_HASH_VERSION, input_hash
@@ -55,7 +56,7 @@ def load_settings(path=None):
     model = asset_spec(source, max_bytes=maximum, base_dir=selected.parent)
     llama = {"binary": "llama-server", "url": None, "cpu_threads": 4, "context_size": 4096,
              "gpu_layers": 0, "parallel": 1, "startup_timeout": 180, "request_timeout": 180,
-             "chat_template_kwargs": {"enable_thinking": False},
+             "chat_template_kwargs": {},
              **(config.get("llama") or {})}
     for name, minimum in (("cpu_threads", 1), ("context_size", 512), ("parallel", 1), ("gpu_layers", -1)):
         if type(llama[name]) is not int or llama[name] < minimum:
@@ -78,7 +79,16 @@ def load_settings(path=None):
         raise ValueError("Invalid evidence generation token budget, temperature or requested word count")
     prompt = config.get("system_prompt")
     if prompt is None:
-        prompt = yaml.safe_load((BASE / "config.yaml").read_text(encoding="utf-8")).get("system_prompt")
+        prompt_file = config.get("system_prompt_file")
+        if prompt_file is None:
+            prompt_path = ROOT / "common/prompts/target_sentiment_evidence.txt"
+        else:
+            if not isinstance(prompt_file, str) or not prompt_file.strip():
+                raise ValueError("system_prompt_file must be a nonempty path")
+            prompt_path = Path(prompt_file).expanduser()
+            if not prompt_path.is_absolute():
+                prompt_path = selected.parent / prompt_path
+        prompt = load_prompt(prompt_path)
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("system_prompt must be a nonempty string")
     prompt = prompt.replace("{requested_words}", str(evidence["requested_words"]))
