@@ -1,7 +1,6 @@
 """Оценить сохранённую версию ученика без обучения и передачи gold в модель."""
 
 import copy
-import hashlib
 from importlib import metadata
 import json
 from pathlib import Path
@@ -10,8 +9,10 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runtime" / "ml"))
 
+from runtime.common.hashing import file_sha256
 from registry import Registry
 import student
 
@@ -30,38 +31,43 @@ def load_student(config):
     model_id = settings.get("model_id")
     if model_id is None:
         entity = settings.get("entity", "ChatGPT")
-        candidates = [model for model in models.values() if model.get("kind") == "encoder"
-                      and model.get("version") and model.get("entity", "").casefold() == entity.casefold()]
-        assert candidates, f"Нет обученного encoder для {entity}"
+        candidates = [model for model in models.values() if model.get("version")
+                      and model.get("entity", "").casefold() == entity.casefold()]
+        assert candidates, f"Нет обученной модели для {entity}"
 
         def trained_at(model):
             return next((row["trained_at"] for row in model["versions"] if row["version"] == model["version"]), "")
 
         model_id = max(candidates, key=lambda model: (trained_at(model), model["id"]))["id"]
     model = models[model_id]
-    assert model["kind"] == "encoder" and model.get("version"), "Выбранная модель ещё не обучена"
+    assert model.get("version"), "Выбранная модель ещё не обучена"
     version = settings.get("version")
     version = model["version"] if version is None else version
     assert type(version) is int and version > 0
     artifact = copy.deepcopy(registry.load(model_id, version))
-    assert artifact["kind"] == "encoder"
     with sqlite3.connect(source) as connection:
         checksum = connection.execute("SELECT sha256 FROM model_artifacts WHERE model_id=? AND version=?",
                                       (model_id, version)).fetchone()[0]
+    runtime = artifact.get("encoder")
+    if not isinstance(runtime, dict):
+        runtime = artifact
     device = settings.get("device")
     if device is not None:
         assert device in {"auto", "cpu", "mps", "cuda"}
-        artifact["encoder"]["device"] = device
+        runtime["device"] = device
     if settings.get("cache_dir"):
-        artifact["encoder"]["cache_dir"] = str(local_path(settings["cache_dir"]))
+        runtime["cache_dir"] = str(local_path(settings["cache_dir"]))
+    source_names = ["runtime/ml/student.py", "runtime/ml/neural.py", "lib/supervision.py",
+                    "demo/quality/student_evaluation.py"]
+    if runtime is artifact:
+        source_names.append("runtime/ml/backends/causal_lm_ensemble.py")
+        source_names.extend(("runtime/prompts/evidence_system.txt", "runtime/prompts/label_only_system.txt"))
     protocol = {
         "kind": "trained-student", "model_id": model_id, "version": version,
         "artifact_sha256": checksum, "entity": artifact["entity"],
-        "input_format": artifact["input_format"], "decision_rule": artifact["decision_rule"],
-        "score_statistic": artifact["score_statistic"], "device": artifact["encoder"]["device"],
-        "source_sha256": {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-                          for name in ("runtime/ml/student.py", "runtime/ml/neural.py", "lib/supervision.py",
-                                       "demo/quality/student_evaluation.py")},
+        "input_format": artifact.get("input_format"), "decision_rule": artifact.get("decision_rule"),
+        "score_statistic": artifact["score_statistic"], "device": runtime.get("device", "auto"),
+        "source_sha256": {name: file_sha256(ROOT / name) for name in source_names},
         "libraries": {name: metadata.version(name) for name in ("torch", "transformers", "peft")},
     }
 

@@ -7,7 +7,7 @@ RUN curl -fsSL "https://github.com/ggml-org/llama.cpp/archive/refs/tags/${LLAMA_
     | tar -xz --strip-components=1 -C /tmp \
     && cmake -S /tmp -B /tmp/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
        -DGGML_CUDA=OFF -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
-       -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF \
+       -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DLLAMA_USE_PREBUILT_UI=OFF \
     && cmake --build /tmp/build --target llama-server --parallel 4
 
 FROM python:3.12-slim-trixie AS python-runtime
@@ -23,7 +23,9 @@ RUN apt-get update \
 COPY runtime/teacher/requirements.txt ./requirements.txt
 RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
+COPY runtime/common ./runtime/common
 COPY runtime/teacher ./runtime/teacher
+COPY runtime/prompts ./runtime/prompts
 RUN install -d -o 10001 -g 10001 /models /data/teacher-logs
 USER 10001:10001
 WORKDIR /app/runtime/teacher

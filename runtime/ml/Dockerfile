@@ -19,7 +19,9 @@ RUN python -m pip install --no-cache-dir "torch==${TORCH_VERSION}" --index-url $
     && python -m pip install --no-cache-dir -r requirements.txt
 COPY lib ./lib
 COPY config.yaml ./config.yaml
+COPY runtime/common ./runtime/common
 COPY runtime/ml ./runtime/ml
+COPY runtime/prompts ./runtime/prompts
 COPY demo/hn_*.json ./demo/
 COPY demo/newsmtsc_train.jsonl ./demo/
 COPY demo/training_sources.yaml ./demo/

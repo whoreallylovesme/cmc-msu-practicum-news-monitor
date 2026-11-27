@@ -11,6 +11,8 @@ from typing import Optional
 
 import requests
 
+from runtime.common.hashing import file_sha256
+
 
 @dataclass(frozen=True)
 class AssetSpec:
@@ -42,14 +44,6 @@ def asset_spec(source, *, size_bytes=None, max_bytes=1024 * 1024 * 1024, base_di
     elif not path.startswith("https://"):
         raise ValueError("Remote model assets require HTTPS")
     return AssetSpec(path, source["is_local"], digest, count, max_bytes)
-
-
-def file_sha256(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def verify_asset(path, spec):

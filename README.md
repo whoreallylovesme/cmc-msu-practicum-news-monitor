@@ -148,7 +148,7 @@ Teacher запускает собственный `llama-server` только п
 отношения к цели и проверку off-topic из другого домена. Она не подтверждает
 такую же точность на HN.
 
-Цель 80% по всем применимым accuracy, precision, recall и F1 не достигнута.
+На независимых человеческих наборах цель 80% по всем применимым accuracy, precision, recall и F1 не достигнута. Дополнительный causal-LM ensemble использует model-agnostic protocol и внешние prompt resources; artifact фиксирует backbone, members и их хэши. Историческая Qwen3-конфигурация достигла 80% по всем 22 метрикам согласия с HN teacher silver.
 На новом Weather FINAL из 2000 текстов точность тональности — 84,4%,
 macro-F1 — 85,1%; для off-topic precision — 89,2%, полнота — 46,4%.
 Кандидат не заменил прежнюю модель. [Полные результаты](demo/quality/README.md#три-тона-и-релевантность).
